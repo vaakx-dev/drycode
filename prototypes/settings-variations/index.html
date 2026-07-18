@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Drycode Settings Variations</title>
+  <link rel="stylesheet" href="./gallery.css">
+</head>
+<body>
+  <header class="gallery-topbar">
+    <div><strong>Drycode</strong><span>/</span><span>Settings explorations</span></div>
+    <span class="count">10 independent directions</span>
+  </header>
+  <div class="gallery-layout">
+    <aside class="variation-sidebar">
+      <header>
+        <span class="eyebrow">Review gallery</span>
+        <h1>Settings variations</h1>
+        <p>Two architecture-led concepts and eight independent explorations.</p>
+      </header>
+      <nav id="variation-list" aria-label="Settings variations"></nav>
+    </aside>
+    <main class="preview-column">
+      <header class="preview-header">
+        <div class="preview-copy">
+          <span id="variation-kind" class="kind"></span>
+          <h2 id="variation-title"></h2>
+          <p id="variation-description"></p>
+          <div id="variation-tags" class="tags"></div>
+        </div>
+        <div class="preview-actions">
+          <button id="previous" aria-label="Previous variation" title="Previous variation">←</button>
+          <button id="next" aria-label="Next variation" title="Next variation">→</button>
+          <a id="open-variation" target="_blank" rel="noreferrer">Open separately</a>
+        </div>
+      </header>
+      <div class="preview-frame"><iframe id="variation-frame" title="Settings variation preview"></iframe></div>
+    </main>
+  </div>
+  <script type="module" src="./gallery.js"></script>
+</body>
+</html>

@@ -1,0 +1,122 @@
+:root {
+  color-scheme: dark;
+  font-family: Inter, "Segoe UI", sans-serif;
+  background: #0b0c0e;
+  color: #e4e7eb;
+}
+
+* { box-sizing: border-box; }
+html, body { width: 100%; height: 100%; margin: 0; }
+body { overflow: hidden; }
+button, a { font: inherit; }
+button { cursor: pointer; }
+
+.gallery-topbar {
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #292d33;
+  background: #1b1d21;
+  padding: 0 14px;
+  color: #8d959f;
+  font-size: 11px;
+}
+.gallery-topbar div { display: flex; align-items: center; gap: 8px; }
+.gallery-topbar strong { color: #e5e8ec; }
+.gallery-topbar .count { font: 10px ui-monospace, "Cascadia Mono", monospace; }
+
+.gallery-layout {
+  height: calc(100% - 42px);
+  display: grid;
+  grid-template-columns: 292px minmax(0, 1fr);
+}
+
+.variation-sidebar {
+  min-height: 0;
+  overflow: auto;
+  border-right: 1px solid #292d33;
+  background: #121416;
+  padding: 22px 12px;
+  scrollbar-color: #454c56 transparent;
+}
+.variation-sidebar > header { padding: 0 8px 18px; }
+.eyebrow, .kind {
+  color: #737b86;
+  font: 700 9px ui-monospace, "Cascadia Mono", monospace;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.variation-sidebar h1 { margin: 7px 0 8px; font-size: 19px; letter-spacing: -.025em; }
+.variation-sidebar p { margin: 0; color: #777f89; font-size: 11px; line-height: 1.5; }
+#variation-list { display: grid; gap: 4px; }
+.variation-item {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 27px minmax(0, 1fr);
+  gap: 9px;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  padding: 9px;
+  color: #8b939e;
+  text-align: left;
+}
+.variation-item:hover { background: #1b1e22; color: #d9dde2; }
+.variation-item.selected { border-color: #49515c; background: #262a30; color: #f0f2f5; }
+.variation-number {
+  width: 27px;
+  height: 27px;
+  display: grid;
+  place-items: center;
+  background: #202329;
+  color: #929aa5;
+  font: 700 9px ui-monospace, "Cascadia Mono", monospace;
+}
+.variation-item.selected .variation-number { background: #d9dde2; color: #17191c; }
+.variation-item span:last-child { min-width: 0; display: grid; gap: 3px; }
+.variation-item b, .variation-item small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.variation-item b { font-size: 11px; }
+.variation-item small { color: #68707b; font-size: 9px; }
+
+.preview-column { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); background: #0b0c0e; }
+.preview-header {
+  min-height: 112px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  border-bottom: 1px solid #292d33;
+  background: #15171a;
+  padding: 15px 20px;
+}
+.preview-copy { min-width: 0; flex: 1; }
+.preview-copy h2 { margin: 4px 0 5px; font-size: 17px; letter-spacing: -.02em; }
+.preview-copy p { max-width: 760px; margin: 0; color: #828a95; font-size: 10px; line-height: 1.45; }
+.tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+.tags span { border: 1px solid #343a43; border-radius: 999px; padding: 3px 7px; color: #838c97; font: 8px ui-monospace, "Cascadia Mono", monospace; text-transform: uppercase; }
+.preview-actions { display: flex; align-items: center; gap: 6px; flex: none; }
+.preview-actions button, .preview-actions a {
+  height: 31px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #3b424b;
+  border-radius: 4px;
+  background: #202329;
+  padding: 0 10px;
+  color: #b8bec7;
+  text-decoration: none;
+  font-size: 10px;
+}
+.preview-actions button { width: 31px; padding: 0; }
+.preview-actions button:hover, .preview-actions a:hover { border-color: #69727f; background: #292d33; color: #fff; }
+.preview-frame { min-width: 0; min-height: 0; padding: 10px; }
+.preview-frame iframe { width: 100%; height: 100%; display: block; border: 1px solid #30353c; border-radius: 5px; background: #000; }
+
+@media (max-width: 900px) {
+  .gallery-layout { grid-template-columns: 230px minmax(0, 1fr); }
+  .preview-header { align-items: flex-start; }
+  .preview-copy p, .tags { display: none; }
+}
