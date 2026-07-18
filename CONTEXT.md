@@ -8,6 +8,10 @@ Drycode is a minimal, locally extensible AI coding application that developers c
 The featureless host that discovers extensions, resolves their relationships, and controls their lifecycle.
 _Avoid_: IDE core, application shell
 
+**Drycode Home**:
+The per-user `~/.drycode/` root containing installed extensions and Drycode's durable, cached, diagnostic, and temporary data.
+_Avoid_: Workspace configuration, project data
+
 **Drycode Harness**:
 Drycode's independent coding-agent runtime. Pi is its initial source, not its ongoing identity or compatibility contract.
 _Avoid_: Pi runtime, Pi wrapper
@@ -66,6 +70,10 @@ _Avoid_: project
 **Session**:
 A durable, linear conversation bound to one Workspace. A Session has at most one active Run.
 _Avoid_: application session, branch tree
+
+**Session Record**:
+One validated, append-only fact in a Session's authoritative record stream.
+_Avoid_: mutable session row, Pi entry
 
 **Run**:
 One agent execution started by Session input and completed by success, failure, or cancellation.
