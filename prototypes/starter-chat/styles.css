@@ -145,7 +145,7 @@ kbd { margin-left: auto; border: 0; border-radius: 6px; background: #1d2024; pad
 .empty-message { min-height: 180px; display: grid; place-content: center; justify-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
 .empty-message svg { width: 28px; height: 28px; color: var(--blue); }
 .empty-message span:last-child { color: var(--dim); font-size: 11px; }
-.composer { max-width: 790px; margin: 0 auto 17px; overflow: hidden; border: 1px solid #4a515e; border-radius: 8px; background: var(--surface); box-shadow: 0 11px 30px #0005; }
+.composer { width: calc(100% - 46px); max-width: 744px; margin: 0 auto 17px; overflow: hidden; border: 1px solid #4a515e; border-radius: 8px; background: var(--surface); box-shadow: 0 11px 30px #0005; }
 .composer textarea { width: 100%; min-height: 65px; display: block; resize: none; border: 0; outline: 0; background: transparent; color: var(--text); padding: 13px 14px 5px; font-size: 13px; }
 .composer textarea::placeholder { color: var(--dim); }
 .composer-bar { display: flex; align-items: center; gap: 7px; padding: 7px 9px 9px; }
