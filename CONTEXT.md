@@ -31,6 +31,14 @@ _Avoid_: global service, cross-process service
 The frozen result of composing all Service Slots for one runtime generation. The UI and Harness runtimes have separate registries.
 _Avoid_: mutable container, Core service registry
 
+**UI-Harness Bridge**:
+The generation-scoped, bidirectional channel through which UI and Harness extensions perform validated remote Calls and Streams.
+_Avoid_: shared service registry, global event bus
+
+**Bridge Endpoint**:
+A named remote contract owned by one Drycode Extension and exposed from one runtime to the other.
+_Avoid_: remote object, implicit callback
+
 **UI Runtime**:
 The replaceable runtime that composes UI services, executes UI entry points, and mounts the effective Shell service.
 _Avoid_: Core UI, permanent renderer
