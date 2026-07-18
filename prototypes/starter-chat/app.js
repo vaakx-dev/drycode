@@ -83,22 +83,6 @@ function sessionRows() {
   </button>`).join("");
 }
 
-function contextHeader() {
-  const session = activeSession();
-  return `<header class="context-header">
-    <div class="session-title"><span class="eyebrow">Conversation</span><div class="title-line"><span class="status-icon ${state.running ? "busy" : "ready"}">${icon(state.running ? "loader-circle" : "circle-check")}</span><h1>${escapeHtml(session.title)}</h1></div></div>
-    <span class="header-divider"></span>
-    <div class="inline-context" aria-label="Current chat context">
-      <button class="context-chip" data-action="workspace">${icon("folder-open")}<span>${escapeHtml(state.workspace.name)}</span></button>
-      <button class="context-chip" data-action="sessions">${icon("message-square")}<span>Session</span></button>
-      <button class="context-chip" data-action="model">${icon("cpu")}<span>${escapeHtml(state.model.name)}</span></button>
-    </div>
-    <span class="grow"></span>
-    <span class="run-stage">${state.running ? escapeHtml(state.stage) : "Durable Session ready"}</span>
-    <button class="subtle-button" data-action="sessions">${icon("list") }<span>Sessions</span></button>
-  </header>`;
-}
-
 function messageStream() {
   const messages = activeSession().messages.map((message) => `<article class="message ${message.role}">
     <div class="message-label"><span class="avatar ${message.role}">${icon(message.role === "user" ? "user-round" : "bot")}</span><b>${message.role === "user" ? "You" : "Drycode"}</b><time>${message.role === "user" ? "just now" : "response"}</time></div>
@@ -118,7 +102,7 @@ function toolCards() {
 function composer() {
   return `<form class="composer" data-composer>
     <textarea aria-label="Message" placeholder="Message Drycode in this Session...">${escapeHtml(state.draft)}</textarea>
-    <div class="composer-bar"><div class="composer-context">${icon("panel-left")}<span>${escapeHtml(state.workspace.name)}</span><span class="context-slash">/</span><span>${escapeHtml(activeSession().title)}</span><span class="context-slash">/</span><span>${escapeHtml(state.model.name)}</span></div><span class="grow"></span>${state.running ? `<button type="button" class="interrupt-button" data-action="interrupt">${icon("square")}<span>Interrupt</span></button>` : `<button type="submit" class="send-button" data-action="send"><span>Send</span>${icon("arrow-up")}</button>`}</div>
+    <div class="composer-bar"><div class="composer-context">${icon("panel-left")}<span>${escapeHtml(state.workspace.name)}</span><span class="context-slash">/</span><span>${escapeHtml(activeSession().title)}</span><span class="context-slash">/</span><button type="button" class="composer-model" data-action="model">${icon("cpu")}<span>${escapeHtml(state.model.name)}</span></button></div><span class="grow"></span>${state.running ? `<button type="button" class="interrupt-button" data-action="interrupt">${icon("square")}<span>Interrupt</span></button>` : `<button type="submit" class="send-button" data-action="send"><span>Send</span>${icon("arrow-up")}</button>`}</div>
   </form>`;
 }
 
@@ -142,7 +126,7 @@ function modal() {
 }
 
 function render() {
-  document.querySelector("#app").innerHTML = `<div class="app-frame">${titlebar()}<div class="nav-layout">${navigationView()}<main class="chat-column">${contextHeader()}${messageStream()}${composer()}</main></div></div>${modal()}${state.toast ? `<div class="toast" role="status">${icon("info")}<span>${escapeHtml(state.toast)}</span></div>` : ""}`;
+  document.querySelector("#app").innerHTML = `<div class="app-frame">${titlebar()}<div class="nav-layout">${navigationView()}<main class="chat-column">${messageStream()}${composer()}</main></div></div>${modal()}${state.toast ? `<div class="toast" role="status">${icon("info")}<span>${escapeHtml(state.toast)}</span></div>` : ""}`;
   if (window.lucide) window.lucide.createIcons();
   bind();
 }
