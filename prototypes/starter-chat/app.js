@@ -104,7 +104,7 @@ function toolCards() {
 function composer() {
   return `<form class="composer" data-composer>
     <textarea aria-label="Message" placeholder="Message Drycode in this Session...">${escapeHtml(state.draft)}</textarea>
-    <div class="composer-bar"><div class="composer-context">${icon("panel-left")}<span>${escapeHtml(state.workspace.name)}</span><span class="context-slash">/</span><span>${escapeHtml(activeSession().title)}</span><span class="context-slash">/</span><button type="button" class="composer-model" data-action="model">${icon("cpu")}<span>${escapeHtml(state.model.name)}</span></button></div><span class="grow"></span>${state.running ? `<button type="button" class="interrupt-button" data-action="interrupt">${icon("square")}<span>Interrupt</span></button>` : `<button type="submit" class="send-button" data-action="send"><span>Send</span>${icon("arrow-up")}</button>`}</div>
+    <div class="composer-bar"><div class="composer-context">${icon("panel-left")}<span>${escapeHtml(state.workspace.name)}</span><span class="context-slash">/</span><span>${escapeHtml(activeSession().title)}</span><span class="context-slash">/</span><button type="button" class="composer-model" data-action="model">${icon("cpu")}<span>${escapeHtml(state.model.name)}</span></button></div><span class="grow"></span>${state.running ? `<button type="button" class="interrupt-button" data-action="interrupt" aria-label="Interrupt" title="Interrupt">${icon("square")}</button>` : `<button type="submit" class="send-button" data-action="send" aria-label="Send" title="Send">${icon("arrow-up")}</button>`}</div>
   </form>`;
 }
 
