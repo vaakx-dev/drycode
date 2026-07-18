@@ -5,6 +5,7 @@ const state = {
     { name: "agent-lab", path: "D:\\work\\agent-lab" },
   ],
   workspaceFilter: "all",
+  sidebarCollapsed: false,
   model: { provider: "Anthropic", name: "Claude Sonnet 4", ready: true },
   activeSession: "contract",
   running: true,
@@ -18,6 +19,8 @@ const state = {
     {
       id: "contract",
       workspace: "drycode",
+      active: true,
+      running: true,
       title: "Shape the starter chat",
       summary: "Map the smallest useful Windows surface",
       time: "Now",
@@ -33,6 +36,8 @@ const state = {
     {
       id: "harness",
       workspace: "drycode",
+      active: false,
+      running: false,
       title: "Extract the Harness",
       summary: "Compare runtime boundaries and hand-offs",
       time: "2h",
@@ -42,6 +47,8 @@ const state = {
     {
       id: "installer",
       workspace: "agent-lab",
+      active: true,
+      running: true,
       title: "Plan the Windows install",
       summary: "Stopped after comparing package formats",
       time: "Fri",
@@ -51,6 +58,8 @@ const state = {
     {
       id: "recovery",
       workspace: "agent-lab",
+      active: false,
+      running: false,
       title: "Recovery surface notes",
       summary: "Capture what remains available during Reload",
       time: "Mon",
@@ -70,6 +79,16 @@ const icon = (name, label = "") => `<i data-lucide="${name}"${label ? ` aria-lab
 const activeSession = () => state.sessions.find((session) => session.id === state.activeSession) || state.sessions[0];
 const activeTools = () => activeSession().tools;
 const visibleSessions = () => state.workspaceFilter === "all" ? state.sessions : state.sessions.filter((session) => session.workspace === state.workspaceFilter);
+
+function topbar() {
+  return `<header class="topbar">
+    <button class="topbar-collapse" data-action="collapse-sidebar" aria-label="${state.sidebarCollapsed ? "Expand" : "Collapse"} sidebar">${icon(state.sidebarCollapsed ? "panel-left-open" : "panel-left-close")}</button>
+    <span class="topbar-title">${escapeHtml(activeSession().title)}</span>
+    <span class="window-drag"></span>
+    <span class="runtime-state ${state.running ? "running" : ""}">${icon(state.running ? "loader-circle" : "circle-check")}<span>${state.running ? "Run active" : "Ready"}</span></span>
+    <div class="window-controls" aria-label="Window controls"><button aria-label="Minimize">${icon("minus")}</button><button aria-label="Maximize">${icon("square")}</button><button aria-label="Close">${icon("x")}</button></div>
+  </header>`;
+}
 
 function messageStream() {
   const messages = activeSession().messages.map((message) => `<article class="message ${message.role}"><p>${escapeHtml(message.text)}</p></article>`).join("");
@@ -93,11 +112,11 @@ function composer() {
 
 function featuredSessionCard(session) {
   const selected = session.id === state.activeSession;
-  const running = selected && state.running;
+  const running = session.running;
   return `<button class="featured-session ${selected ? "selected" : ""}" data-session="${session.id}">
     <span class="featured-meta"><span class="session-source">${icon("message-square-code")}<b>${escapeHtml(session.workspace)}</b></span><time>${session.time}</time></span>
     <strong>${escapeHtml(session.title)}</strong>
-    <span class="featured-status"><b class="${running ? "running" : ""}">${running ? "Running" : "Active"}</b><span>${escapeHtml(running ? state.stage : session.summary)}</span>${icon(running ? "square" : "circle")}</span>
+    <span class="featured-status"><b class="${running ? "running" : ""}">${running ? "Running" : "Active"}</b><span>${escapeHtml(selected && running ? state.stage : session.summary)}</span>${icon(running ? "loader-circle" : "circle")}</span>
   </button>`;
 }
 
@@ -109,10 +128,10 @@ function settledSessionRow(session) {
 
 function navigationView() {
   const sessions = visibleSessions();
-  const featured = sessions.filter((session) => session.id === state.activeSession);
-  const settled = sessions.filter((session) => session.id !== state.activeSession);
-  return `<nav class="navigation-view" aria-label="Drycode navigation">
-    <header class="sidebar-brand"><button class="sidebar-icon" data-action="collapse-sidebar" aria-label="Collapse sidebar">${icon("panel-left-close")}</button><span class="sidebar-logo">${icon("panels-top-left")}</span><strong>Drycode</strong><span class="dev-badge">Dev</span></header>
+  const featured = sessions.filter((session) => session.active);
+  const settled = sessions.filter((session) => !session.active);
+  return `<nav class="navigation-view ${state.sidebarCollapsed ? "collapsed" : ""}" aria-label="Drycode navigation">
+    <header class="sidebar-brand"><span class="sidebar-logo">${icon("panels-top-left")}</span><strong>Drycode</strong><span class="dev-badge">Dev</span></header>
     <div class="sidebar-actions">
       <button data-action="search">${icon("search")}<span>Search</span><kbd>Ctrl K</kbd></button>
       <button data-action="new-session">${icon("plus")}<span>New Session</span><kbd>Ctrl Shift O</kbd></button>
@@ -139,7 +158,7 @@ function modal() {
 }
 
 function render() {
-  document.querySelector("#app").innerHTML = `<div class="app-frame"><div class="nav-layout">${navigationView()}<main class="chat-column">${messageStream()}${composer()}</main></div></div>${modal()}${state.toast ? `<div class="toast" role="status">${icon("info")}<span>${escapeHtml(state.toast)}</span></div>` : ""}`;
+  document.querySelector("#app").innerHTML = `<div class="app-frame">${topbar()}<div class="nav-layout ${state.sidebarCollapsed ? "sidebar-collapsed" : ""}">${navigationView()}<main class="chat-column">${messageStream()}${composer()}</main></div></div>${modal()}${state.toast ? `<div class="toast" role="status">${icon("info")}<span>${escapeHtml(state.toast)}</span></div>` : ""}`;
   if (window.lucide) window.lucide.createIcons();
   bind();
 }
@@ -153,17 +172,18 @@ function showToast(text) {
 
 function selectSession(id) {
   window.clearTimeout(state.runTimer);
+  const session = state.sessions.find((item) => item.id === id);
   state.activeSession = id;
   state.modal = null;
-  state.running = false;
-  state.stage = "Ready";
+  state.running = session?.running ?? false;
+  state.stage = state.running ? "Run active" : "Ready";
   render();
 }
 
 function newSession() {
   const id = `session-${state.sessions.length + 1}`;
   const workspace = state.workspaceFilter === "all" ? state.workspace.name : state.workspaceFilter;
-  state.sessions.unshift({ id, workspace, title: "Untitled Session", summary: "No messages yet", time: "Now", messages: [], tools: [] });
+  state.sessions.unshift({ id, workspace, active: true, running: false, title: "Untitled Session", summary: "No messages yet", time: "Now", messages: [], tools: [] });
   state.activeSession = id;
   state.running = false;
   state.draft = "";
@@ -215,6 +235,8 @@ function completeRun() {
   const session = activeSession();
   session.tools = session.tools.map((tool) => tool.status === "running" ? { ...tool, status: "completed", output: "Workspace context ready\nRun completed successfully." } : tool);
   session.messages.push({ role: "assistant", text: "Workspace context is ready. The Tool result is attached to this Run." });
+  session.active = false;
+  session.running = false;
   state.running = false;
   state.stage = "Run completed";
   render();
@@ -228,6 +250,8 @@ function send() {
   session.messages.push({ role: "assistant", text: "I will inspect the Workspace and report each Tool as it runs." });
   session.tools.push({ name: "workspace_scan", detail: "Workspace context", status: "running", output: "Inspecting Workspace..." });
   session.summary = text;
+  session.active = true;
+  session.running = true;
   state.draft = "";
   state.running = true;
   state.stage = "Inspecting Workspace";
@@ -239,6 +263,8 @@ function interrupt() {
   window.clearTimeout(state.runTimer);
   const session = activeSession();
   state.running = false;
+  session.active = false;
+  session.running = false;
   state.stage = "Interrupted by user";
   session.tools = session.tools.map((tool) => tool.status === "running" ? { ...tool, status: "completed", output: `${tool.output}\nRun interrupted by user.` } : tool);
   session.messages.push({ role: "assistant", text: "Run interrupted. Completed messages and Tool results remain in this Session." });
@@ -253,6 +279,8 @@ function confirmReload() {
     state.modal = null;
     state.running = false;
     state.stage = "Ready after Reload";
+    activeSession().active = false;
+    activeSession().running = false;
     activeTools().forEach((tool) => { tool.status = "completed"; });
     render();
     showToast("Runtime Generation reloaded");
@@ -270,7 +298,10 @@ function bind() {
     if (action === "send") return send();
     if (action === "choose-folder") return chooseWorkspace();
     if (action === "search") return showToast("Session search would open here");
-    if (action === "collapse-sidebar") return showToast("Sidebar collapse would keep an icon rail");
+    if (action === "collapse-sidebar") {
+      state.sidebarCollapsed = !state.sidebarCollapsed;
+      return render();
+    }
     if (action === "save-model") {
       state.model.provider = document.querySelector("#provider").value;
       state.model.name = document.querySelector("#model").value;
