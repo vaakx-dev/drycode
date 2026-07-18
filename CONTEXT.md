@@ -23,13 +23,25 @@ _Avoid_: plug-in, Pi extension
 **Extension Manifest**:
 A Drycode Extension's declaration of its identity, version, Drycode compatibility, entry points, required dependencies, and soft ordering relationships.
 
+**Installed Extension**:
+A Drycode Extension package present as an immediate child directory of `~/.drycode/extensions/`. Developers own the directory and may author directly within it; Drycode discovers but does not install, update, or remove it.
+_Avoid_: managed package, installation record
+
+**Extension Validator**:
+The validation-only `drycode-extension` companion CLI, which checks Extension packages without executing their code or controlling Drycode.
+_Avoid_: Drycode CLI, package manager
+
 **Soft Dependency**:
 An optional activation-order relationship expressed as an Extension identity selector. Matching enabled Extensions activate first; no match is valid and promises no behavioral compatibility.
 _Avoid_: required dependency, provided capability, Extension family
 
 **Enabled Extension**:
-An installed Drycode Extension selected for inclusion in the next Runtime Generation. Enablement changes take effect through Reload; disabled packages and their durable data remain installed.
-_Avoid_: active entry point, uninstalled Extension
+An Installed Extension whose root does not contain the regular file `.disabled`, selecting it for inclusion in the next Runtime Generation. Enablement changes take effect through Reload.
+_Avoid_: loaded Extension, active entry point
+
+**Disabled Extension**:
+An Installed Extension whose root contains the regular file `.disabled`, excluding it from the next Runtime Generation without removing its package or durable data.
+_Avoid_: unloaded Extension, uninstalled Extension
 
 **Extension Graph**:
 The deterministic dependency and soft-ordering graph of enabled Drycode Extensions. Invalid or failed Extensions and their required dependents receive explicit activation states while independent Extensions may continue loading.
