@@ -43,6 +43,14 @@ _Avoid_: remote object, implicit callback
 The replaceable runtime that composes UI services, executes UI entry points, and mounts the effective Shell service.
 _Avoid_: Core UI, permanent renderer
 
+**Runtime Generation**:
+One supervised instance of the resolved Extension Graph, paired UI and Harness runtimes, and their UI-Harness Bridge. The generation starts, runs, and stops as one unit.
+_Avoid_: partial runtime, independent UI restart
+
+**Recovery Surface**:
+The minimal Core-owned lifecycle interface shown when no Runtime Generation is running.
+_Avoid_: fallback Shell, built-in application UI
+
 **Shell Extension**:
 The Drycode Extension that supplies the effective base provider for the Shell service. It owns the application's root user interface and defines how other UI contributions compose.
 _Avoid_: core shell, built-in shell
@@ -76,5 +84,5 @@ A named set of instructions and resources selected for a Session and incorporate
 _Avoid_: command, executable extension
 
 **Reload**:
-A complete restart of the extension and harness runtimes while the desktop application remains open.
-_Avoid_: hot reload, application restart
+The stop-then-start replacement of one Runtime Generation with another while Drycode Core and the desktop window remain open.
+_Avoid_: hot reload, application restart, rolling replacement
