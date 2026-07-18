@@ -1,5 +1,10 @@
 const state = {
   workspace: { name: "drycode", path: "D:\\work\\drycode" },
+  workspaces: [
+    { name: "drycode", path: "D:\\work\\drycode" },
+    { name: "agent-lab", path: "D:\\work\\agent-lab" },
+  ],
+  workspaceFilter: "all",
   model: { provider: "Anthropic", name: "Claude Sonnet 4", ready: true },
   activeSession: "contract",
   running: true,
@@ -12,6 +17,7 @@ const state = {
   sessions: [
     {
       id: "contract",
+      workspace: "drycode",
       title: "Shape the starter chat",
       summary: "Map the smallest useful Windows surface",
       time: "Now",
@@ -26,6 +32,7 @@ const state = {
     },
     {
       id: "harness",
+      workspace: "drycode",
       title: "Extract the Harness",
       summary: "Compare runtime boundaries and hand-offs",
       time: "2h",
@@ -34,6 +41,7 @@ const state = {
     },
     {
       id: "installer",
+      workspace: "agent-lab",
       title: "Plan the Windows install",
       summary: "Stopped after comparing package formats",
       time: "Fri",
@@ -42,6 +50,7 @@ const state = {
     },
     {
       id: "recovery",
+      workspace: "agent-lab",
       title: "Recovery surface notes",
       summary: "Capture what remains available during Reload",
       time: "Mon",
@@ -60,28 +69,10 @@ const escapeHtml = (value) => String(value)
 const icon = (name, label = "") => `<i data-lucide="${name}"${label ? ` aria-label="${label}"` : ""}></i>`;
 const activeSession = () => state.sessions.find((session) => session.id === state.activeSession) || state.sessions[0];
 const activeTools = () => activeSession().tools;
-
-function titlebar() {
-  return `<header class="titlebar">
-    <span class="brand-mark">${icon("panels-top-left")}</span>
-    <strong class="wordmark">drycode</strong><span class="title-separator">/</span><span class="window-title">Chat</span>
-    <span class="window-drag"></span>
-    <span class="runtime-state">${icon(state.running ? "loader-circle" : "circle-check")}<span>${state.running ? "Run active" : "Ready"}</span></span>
-    <div class="window-controls" aria-label="Window controls"><button aria-label="Minimize">${icon("minus")}</button><button aria-label="Maximize">${icon("square")}</button><button aria-label="Close">${icon("x")}</button></div>
-  </header>`;
-}
-
-function sessionRows() {
-  return state.sessions.map((session) => `<button class="session-row ${session.id === state.activeSession ? "selected" : ""}" data-session="${session.id}">
-    <span class="session-icon">${icon(session.id === state.activeSession ? "circle-dot" : "circle")}</span><span class="session-row-copy"><b>${escapeHtml(session.title)}</b><small>${escapeHtml(session.summary)}</small></span><time>${session.time}</time>
-  </button>`).join("");
-}
+const visibleSessions = () => state.workspaceFilter === "all" ? state.sessions : state.sessions.filter((session) => session.workspace === state.workspaceFilter);
 
 function messageStream() {
-  const messages = activeSession().messages.map((message) => `<article class="message ${message.role}">
-    <div class="message-label"><span class="avatar ${message.role}">${icon(message.role === "user" ? "user-round" : "bot")}</span><b>${message.role === "user" ? "You" : "Drycode"}</b><time>${message.role === "user" ? "just now" : "response"}</time></div>
-    <p>${escapeHtml(message.text)}</p>
-  </article>`).join("");
+  const messages = activeSession().messages.map((message) => `<article class="message ${message.role}"><p>${escapeHtml(message.text)}</p></article>`).join("");
   return `<div class="message-stream">${messages || `<div class="empty-message">${icon("message-circle")}<b>Start this Session</b><span>Ask Drycode to work in ${escapeHtml(state.workspace.name)}.</span></div>`}<section class="inline-tools" aria-label="Tool activity"><div class="section-kicker"><span>${icon("wrench")}Tool activity</span><span class="muted">${activeTools().length} events</span></div>${toolCards()}</section></div>`;
 }
 
@@ -104,7 +95,7 @@ function featuredSessionCard(session, index) {
   const selected = session.id === state.activeSession;
   const running = selected && state.running;
   return `<button class="featured-session ${selected ? "selected" : ""}" data-session="${session.id}">
-    <span class="featured-meta"><span class="session-source">${icon("message-square-code")}<b>${escapeHtml(state.workspace.name)}</b></span><time>${session.time}</time></span>
+    <span class="featured-meta"><span class="session-source">${icon("message-square-code")}<b>${escapeHtml(session.workspace)}</b></span><time>${session.time}</time></span>
     <strong>${escapeHtml(session.title)}</strong>
     <span class="featured-status"><b class="${running ? "running" : ""}">${running ? "Running" : index === 0 ? "Active" : "Paused"}</b><span>${escapeHtml(running ? state.stage : session.summary)}</span>${icon(running ? "square" : "loader-circle")}</span>
   </button>`;
@@ -117,8 +108,9 @@ function settledSessionRow(session) {
 }
 
 function navigationView() {
-  const featured = state.sessions.slice(0, 2);
-  const settled = state.sessions.slice(2);
+  const sessions = visibleSessions();
+  const featured = sessions.slice(0, 2);
+  const settled = sessions.slice(2);
   return `<nav class="navigation-view" aria-label="Drycode navigation">
     <header class="sidebar-brand"><button class="sidebar-icon" data-action="collapse-sidebar" aria-label="Collapse sidebar">${icon("panel-left-close")}</button><span class="sidebar-logo">${icon("panels-top-left")}</span><strong>Drycode</strong><span class="dev-badge">Dev</span></header>
     <div class="sidebar-actions">
@@ -126,9 +118,9 @@ function navigationView() {
       <button data-action="new-session">${icon("plus")}<span>New Session</span><kbd>Ctrl Shift O</kbd></button>
     </div>
     <div class="workspace-tabs">
-      <button class="all-workspaces">All</button>
-      <button data-action="workspace">${icon("folder")}<span>${escapeHtml(state.workspace.name)}</span></button>
-      <button class="add-workspace" data-action="workspace" aria-label="Add Workspace">${icon("plus")}</button>
+      <button class="all-workspaces ${state.workspaceFilter === "all" ? "selected" : ""}" data-workspace-filter="all">All</button>
+      ${state.workspaces.map((workspace) => `<button class="${state.workspaceFilter === workspace.name ? "selected" : ""}" data-workspace-filter="${escapeHtml(workspace.name)}">${icon("folder")}<span>${escapeHtml(workspace.name)}</span></button>`).join("")}
+      <button class="add-workspace" data-action="choose-folder" aria-label="Add Workspace">${icon("plus")}</button>
     </div>
     <div class="sidebar-sessions">
       <div class="featured-sessions">${featured.map(featuredSessionCard).join("")}</div>
@@ -141,15 +133,13 @@ function navigationView() {
 
 function modal() {
   if (!state.modal) return "";
-  if (state.modal === "workspace") return `<div class="modal-shade" data-dismiss="true"><section class="dialog" role="dialog" aria-modal="true" aria-labelledby="workspace-title"><div class="dialog-title"><span class="dialog-icon">${icon("folder-open")}</span><div><span class="eyebrow">Workspace</span><h2 id="workspace-title">Select a Workspace</h2></div></div><p>A Session is bound to the Workspace selected when it is created.</p><div class="workspace-options"><button data-workspace="drycode|D:\\work\\drycode" class="option-row ${state.workspace.name === "drycode" ? "chosen" : ""}">${icon("folder")}<span><b>drycode</b><small>D:\\work\\drycode</small></span>${state.workspace.name === "drycode" ? icon("check") : ""}</button><button data-workspace="agent-lab|D:\\work\\agent-lab" class="option-row ${state.workspace.name === "agent-lab" ? "chosen" : ""}">${icon("folder")}<span><b>agent-lab</b><small>D:\\work\\agent-lab</small></span>${state.workspace.name === "agent-lab" ? icon("check") : ""}</button><button class="option-row" data-action="choose-folder">${icon("folder-plus")}<span><b>Choose another folder</b><small>Open the native folder picker stub</small></span></button></div><div class="dialog-actions"><button class="plain-button" data-action="close-modal">Cancel</button></div></section></div>`;
   if (state.modal === "model") return `<div class="modal-shade" data-dismiss="true"><section class="dialog" role="dialog" aria-modal="true" aria-labelledby="model-title"><div class="dialog-title"><span class="dialog-icon violet">${icon("cpu")}</span><div><span class="eyebrow">Session configuration</span><h2 id="model-title">Configure Model</h2></div></div><p>The Model Provider owns discovery and credentials. This choice applies to the current Session.</p><label>Provider<select id="provider"><option ${state.model.provider === "Anthropic" ? "selected" : ""}>Anthropic</option><option ${state.model.provider === "OpenAI" ? "selected" : ""}>OpenAI</option><option ${state.model.provider === "Google" ? "selected" : ""}>Google</option></select></label><label>Model<select id="model"><option ${state.model.name === "Claude Sonnet 4" ? "selected" : ""}>Claude Sonnet 4</option><option ${state.model.name === "Claude Opus 4" ? "selected" : ""}>Claude Opus 4</option><option ${state.model.name === "Claude Haiku 3.5" ? "selected" : ""}>Claude Haiku 3.5</option></select></label><label>API credential<input type="password" value="placeholder-credential" aria-label="API credential"></label><div class="dialog-actions"><button class="plain-button" data-action="close-modal">Cancel</button><button class="primary-button" data-action="save-model">${icon("check")}<span>Use Model</span></button></div></section></div>`;
-  if (state.modal === "sessions") return `<div class="modal-shade" data-dismiss="true"><section class="dialog session-dialog" role="dialog" aria-modal="true" aria-labelledby="sessions-title"><div class="dialog-title"><span class="dialog-icon">${icon("messages-square")}</span><div><span class="eyebrow">${escapeHtml(state.workspace.name)}</span><h2 id="sessions-title">Open a Session</h2></div></div><p>Resume a durable conversation or start a new one in this Workspace.</p><div class="dialog-sessions">${sessionRows()}</div><div class="dialog-actions"><button class="plain-button" data-action="close-modal">Cancel</button><button class="primary-button" data-action="new-session">${icon("plus")}<span>New Session</span></button></div></section></div>`;
   if (state.modal === "reload") return `<div class="modal-shade" data-dismiss="true"><section class="dialog" role="dialog" aria-modal="true" aria-labelledby="reload-title"><div class="dialog-title"><span class="dialog-icon amber">${icon("refresh-cw")}</span><div><span class="eyebrow">Runtime lifecycle</span><h2 id="reload-title">Reload the Runtime?</h2></div></div><p>Drycode will stop the complete UI and Harness Runtime Generation, then start a fresh generation. Durable Sessions remain available.</p><div class="reload-note">${icon("triangle-alert")}<span>Active work will be interrupted. Your Session record stays safe.</span></div><div class="dialog-actions"><button class="plain-button" data-action="close-modal">Cancel</button><button class="danger-button" data-action="confirm-reload">${icon("refresh-cw")}<span>Reload Drycode</span></button></div></section></div>`;
   return `<div class="modal-shade"><section class="dialog reload-progress" role="dialog" aria-modal="true"><span class="dialog-icon amber">${icon("refresh-cw")}</span><span class="eyebrow">Runtime lifecycle</span><h2>Reloading Runtime...</h2><p>Stopping the current generation and starting a fresh UI and Harness pair.</p><div class="progress-track"><i></i></div><small>Starting Runtime Generation 19</small></section></div>`;
 }
 
 function render() {
-  document.querySelector("#app").innerHTML = `<div class="app-frame">${titlebar()}<div class="nav-layout">${navigationView()}<main class="chat-column">${messageStream()}${composer()}</main></div></div>${modal()}${state.toast ? `<div class="toast" role="status">${icon("info")}<span>${escapeHtml(state.toast)}</span></div>` : ""}`;
+  document.querySelector("#app").innerHTML = `<div class="app-frame"><div class="nav-layout">${navigationView()}<main class="chat-column">${messageStream()}${composer()}</main></div></div>${modal()}${state.toast ? `<div class="toast" role="status">${icon("info")}<span>${escapeHtml(state.toast)}</span></div>` : ""}`;
   if (window.lucide) window.lucide.createIcons();
   bind();
 }
@@ -172,11 +162,52 @@ function selectSession(id) {
 
 function newSession() {
   const id = `session-${state.sessions.length + 1}`;
-  state.sessions.unshift({ id, title: "Untitled Session", summary: "No messages yet", time: "Now", messages: [], tools: [] });
+  const workspace = state.workspaceFilter === "all" ? state.workspace.name : state.workspaceFilter;
+  state.sessions.unshift({ id, workspace, title: "Untitled Session", summary: "No messages yet", time: "Now", messages: [], tools: [] });
   state.activeSession = id;
   state.running = false;
   state.draft = "";
   state.modal = null;
+  render();
+}
+
+async function chooseWorkspace() {
+  try {
+    if (window.showDirectoryPicker) {
+      const directory = await window.showDirectoryPicker();
+      const workspace = { name: directory.name, path: directory.name };
+      if (!state.workspaces.some((item) => item.name === workspace.name)) state.workspaces.push(workspace);
+      state.workspace = workspace;
+      state.workspaceFilter = workspace.name;
+      render();
+      return;
+    }
+
+    const picker = document.createElement("input");
+    picker.type = "file";
+    picker.webkitdirectory = true;
+    picker.addEventListener("change", () => {
+      const first = picker.files?.[0];
+      if (!first) return;
+      const name = first.webkitRelativePath.split("/")[0];
+      const workspace = { name, path: name };
+      if (!state.workspaces.some((item) => item.name === name)) state.workspaces.push(workspace);
+      state.workspace = workspace;
+      state.workspaceFilter = name;
+      render();
+    });
+    picker.click();
+  } catch (error) {
+    if (error?.name !== "AbortError") showToast("The folder picker could not open");
+  }
+}
+
+function filterWorkspace(name) {
+  state.workspaceFilter = name;
+  const workspace = state.workspaces.find((item) => item.name === name);
+  if (workspace) state.workspace = workspace;
+  const sessions = visibleSessions();
+  if (sessions.length && !sessions.some((session) => session.id === state.activeSession)) state.activeSession = sessions[0].id;
   render();
 }
 
@@ -232,12 +263,12 @@ function bind() {
   document.querySelectorAll("[data-action]").forEach((element) => element.addEventListener("click", (event) => {
     const action = element.dataset.action;
     if (action === "send") event.preventDefault();
-    if (["workspace", "model", "sessions", "reload"].includes(action)) state.modal = action;
+    if (["model", "reload"].includes(action)) state.modal = action;
     if (action === "close-modal") state.modal = null;
     if (action === "new-session") return newSession();
     if (action === "interrupt") return interrupt();
     if (action === "send") return send();
-    if (action === "choose-folder") return showToast("Native folder picker would open here");
+    if (action === "choose-folder") return chooseWorkspace();
     if (action === "search") return showToast("Session search would open here");
     if (action === "collapse-sidebar") return showToast("Sidebar collapse would keep an icon rail");
     if (action === "save-model") {
@@ -250,13 +281,7 @@ function bind() {
     render();
   }));
   document.querySelectorAll("[data-session]").forEach((element) => element.addEventListener("click", () => selectSession(element.dataset.session)));
-  document.querySelectorAll("[data-workspace]").forEach((element) => element.addEventListener("click", () => {
-    const [name, path] = element.dataset.workspace.split("|");
-    state.workspace = { name, path };
-    state.modal = null;
-    state.toast = `Workspace changed to ${name}`;
-    render();
-  }));
+  document.querySelectorAll("[data-workspace-filter]").forEach((element) => element.addEventListener("click", () => filterWorkspace(element.dataset.workspaceFilter)));
   document.querySelectorAll("textarea").forEach((textarea) => {
     textarea.addEventListener("input", () => { state.draft = textarea.value; });
     textarea.addEventListener("keydown", (event) => {
