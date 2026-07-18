@@ -80,16 +80,20 @@ The UI Runtime capability that loads Fluent FTL catalogs declared by UI Extensio
 _Avoid_: localization Extension, language-pack Extension
 
 **Runtime Generation**:
-One supervised instance of the resolved Extension Graph, paired UI and Backend runtimes, their UI-Backend Bridge, and the activation state of every installed Extension. Loaded Extensions start, run, and stop as one unit.
+One supervised instance of the resolved Extension Graph, the runtimes required by its Host, and the activation state of every installed Extension. A Desktop Runtime Generation pairs UI and Backend runtimes through the UI-Backend Bridge; a Headless Runtime Generation runs the Backend without a UI Runtime or Shell. Loaded Extensions start, run, and stop as one unit.
 _Avoid_: independent UI restart, silently skipped Extension
+
+**Headless Host**:
+The terminal entry point that supervises a Headless Runtime Generation and exposes Drycode Agent through one-shot Print or persistent JSONL RPC operation.
+_Avoid_: terminal UI, CLI Extension, desktop client
 
 **Recovery Surface**:
 The minimal Core-owned lifecycle interface shown when no Runtime Generation is running.
 _Avoid_: fallback Shell, built-in application UI
 
 **Shell Extension**:
-The Drycode Extension that supplies the effective Shell service. It owns the application's root user interface and renders the stable UI Element Identifiers that other UI Extensions may use.
-_Avoid_: core shell, built-in shell
+The Drycode Extension that supplies the effective Shell service for a Desktop Runtime Generation. It owns the application's root user interface and renders the stable UI Element Identifiers that other UI Extensions may use.
+_Avoid_: core shell, built-in shell, headless shell
 
 **UI Element Identifier**:
 A conventional DOM identifier through which fully trusted UI Extensions may opportunistically observe or modify another Extension's rendered interface. Unique elements use `id`; repeated elements use `data-element-id`. An absent identifier leaves the observing Extension inert and never invalidates the Extension Graph.
@@ -104,12 +108,32 @@ The absolute local folder path carried by a Session and used as that Session's o
 _Avoid_: project, Workspace record, Workspace repository
 
 **Session**:
-A durable, linear conversation bound to one Workspace. A Session has at most one active Run.
-_Avoid_: application session, branch tree
+A durable, append-only conversation tree bound to one Workspace. One active leaf selects the current conversation path, and a Session has at most one active Run.
+_Avoid_: application session, linear transcript
 
 **Session Record**:
-One validated, append-only fact in a Session's authoritative record stream.
+One validated, append-only fact whose parent relationship places it in a Session tree.
 _Avoid_: mutable session row, Pi entry
+
+**Extension Record**:
+A namespaced Session Record owned and validated by one Drycode Extension. It preserves Extension state and is excluded from Model context unless explicitly projected by its owner.
+_Avoid_: custom entry, arbitrary metadata
+
+**Extension Message**:
+A namespaced Session Record owned and validated by one Drycode Extension whose content is projected into Model context with explicit user-visibility metadata.
+_Avoid_: custom message, hidden user message
+
+**Branch**:
+A conversation path through one Session tree. Selecting an earlier Session Record as the active leaf preserves existing history and lets subsequent records form another Branch.
+_Avoid_: copied Session, mutable history
+
+**Fork**:
+A new Session derived from a selected position in another Session, retaining its source lineage and selected conversation history. A Fork may use a different Workspace.
+_Avoid_: Branch, imported Session
+
+**Clone**:
+A Fork created from the active leaf of a Session in the same Workspace.
+_Avoid_: Branch, backup
 
 **Run**:
 One Agent Execution started by Session input and completed by success, failure, or cancellation.
