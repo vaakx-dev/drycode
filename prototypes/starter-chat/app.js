@@ -91,6 +91,7 @@ const INSTALLED_EXTENSIONS = [
   { name: "Starter Shell", id: "vaakx.starter-shell", version: "0.6.2", role: "UI · Shell", icon: "panel-top" },
   { name: "Starter Sessions", id: "vaakx.starter-sessions", version: "0.6.2", role: "UI · Harness", icon: "messages-square" },
   { name: "Workspace Tools", id: "vaakx.workspace-tools", version: "0.4.1", role: "Harness", icon: "wrench" },
+  { name: "English (United States)", id: "drycode.en-us", version: "0.1.0", role: "UI · Language", icon: "languages" },
   { name: "Anthropic Provider", id: "vaakx.anthropic", version: "0.3.0", role: "Harness", icon: "blocks" },
   { name: "OpenAI Provider", id: "vaakx.openai", version: "0.3.0", role: "Harness", icon: "blocks" },
   { name: "Google Provider", id: "vaakx.google", version: "0.2.4", role: "Harness", icon: "blocks" },
@@ -165,7 +166,7 @@ function generalSettings() {
   return `<section class="settings-group"><header><h2>Chat behavior</h2><p>Preferences owned by the Starter Shell.</p></header><div class="setting-list">
     ${settingRow("corner-down-left", "Enter sends messages", "Use Shift Enter for a new line.", `<button class="setting-switch ${state.preferences.enterToSend ? "selected" : ""}" data-preference="enterToSend" aria-pressed="${state.preferences.enterToSend}" aria-label="Toggle Enter to send"><i></i></button>`)}
     ${settingRow("wrench", "Expand Tool activity", "Open completed Tool results in the transcript.", `<button class="setting-switch ${state.preferences.expandTools ? "selected" : ""}" data-preference="expandTools" aria-pressed="${state.preferences.expandTools}" aria-label="Toggle expanded Tool activity"><i></i></button>`)}
-  </div></section><section class="settings-group"><header><h2>Runtime</h2><p>Changes to installed Extensions apply after Reload.</p></header><div class="setting-list">${settingRow("refresh-cw", "Runtime Generation", "Running · durable Sessions remain available after Reload.", `<button data-action="reload">Reload</button>`)}</div></section>`;
+  </div></section>`;
 }
 
 function extensionSettings() {
