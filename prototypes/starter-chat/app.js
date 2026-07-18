@@ -9,7 +9,11 @@ const state = {
   workspaceFilter: "all",
   workspaceScroll: 0,
   sidebarCollapsed: false,
+  page: "chat",
+  composerMenu: null,
+  providerView: "Anthropic",
   model: { provider: "Anthropic", name: "Claude Sonnet 4", ready: true },
+  thinking: "High",
   activeSession: "contract",
   running: true,
   stage: "Reading Workspace context",
@@ -72,6 +76,13 @@ const state = {
   ],
 };
 
+const MODEL_PROVIDERS = [
+  { name: "Anthropic", icon: "https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/anthropic.svg", models: ["Claude Sonnet 4", "Claude Opus 4", "Claude Haiku 3.5"] },
+  { name: "OpenAI", icon: "https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/openai.svg", models: ["GPT-5", "o3"] },
+  { name: "Google", icon: "https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/google.svg", models: ["Gemini 2.5 Pro", "Gemini 2.5 Flash"] },
+];
+const THINKING_LEVELS = ["Off", "Low", "Medium", "High"];
+
 const escapeHtml = (value) => String(value)
   .replaceAll("&", "&amp;")
   .replaceAll("<", "&lt;")
@@ -104,11 +115,35 @@ function toolCards() {
   </details>`).join("");
 }
 
+function modelPicker() {
+  const provider = MODEL_PROVIDERS.find((item) => item.name === state.providerView) || MODEL_PROVIDERS[0];
+  return `<section class="model-picker" aria-label="Select model">
+    <aside class="provider-list"><span>Providers</span>${MODEL_PROVIDERS.map((item) => `<button type="button" class="${item.name === provider.name ? "selected" : ""}" data-provider-option="${escapeHtml(item.name)}"><img src="${item.icon}" alt=""><span>${escapeHtml(item.name)}</span></button>`).join("")}</aside>
+    <div class="model-list"><span>${escapeHtml(provider.name)} models</span>${provider.models.map((model) => `<button type="button" class="${state.model.provider === provider.name && state.model.name === model ? "selected" : ""}" data-model-option="${escapeHtml(model)}" data-model-provider="${escapeHtml(provider.name)}"><span>${escapeHtml(model)}</span>${state.model.provider === provider.name && state.model.name === model ? icon("check") : ""}</button>`).join("")}</div>
+  </section>`;
+}
+
+function thinkingPicker() {
+  return `<section class="thinking-picker" aria-label="Select thinking level"><span>Thinking level</span>${THINKING_LEVELS.map((level) => `<button type="button" class="${state.thinking === level ? "selected" : ""}" data-thinking-option="${level}"><span>${level}</span>${state.thinking === level ? icon("check") : ""}</button>`).join("")}</section>`;
+}
+
 function composer() {
   return `<form class="composer" data-composer>
     <textarea aria-label="Message" placeholder="Message Drycode in this Session...">${escapeHtml(state.draft)}</textarea>
-    <div class="composer-bar"><div class="composer-context">${icon("panel-left")}<span>${escapeHtml(state.workspace.name)}</span><span class="context-slash">/</span><span>${escapeHtml(activeSession().title)}</span><span class="context-slash">/</span><button type="button" class="composer-model" data-action="model">${icon("cpu")}<span>${escapeHtml(state.model.name)}</span></button></div><span class="grow"></span>${state.running ? `<button type="button" class="interrupt-button" data-action="interrupt" aria-label="Interrupt" title="Interrupt">${icon("square")}</button>` : `<button type="submit" class="send-button" data-action="send" aria-label="Send" title="Send">${icon("arrow-up")}</button>`}</div>
+    <div class="composer-bar">
+      <div class="composer-control model-control"><button type="button" class="composer-select" data-action="toggle-model" aria-expanded="${state.composerMenu === "model"}"><span>${escapeHtml(state.model.name)}</span>${icon("chevron-down")}</button>${state.composerMenu === "model" ? modelPicker() : ""}</div>
+      <div class="composer-control thinking-control"><button type="button" class="composer-select" data-action="toggle-thinking" aria-expanded="${state.composerMenu === "thinking"}"><span>${escapeHtml(state.thinking)}</span>${icon("chevron-down")}</button>${state.composerMenu === "thinking" ? thinkingPicker() : ""}</div>
+      <span class="grow"></span>${state.running ? `<button type="button" class="interrupt-button" data-action="interrupt" aria-label="Interrupt" title="Interrupt">${icon("square")}</button>` : `<button type="submit" class="send-button" data-action="send" aria-label="Send" title="Send">${icon("arrow-up")}</button>`}
+    </div>
   </form>`;
+}
+
+function settingsPage() {
+  return `<main class="settings-page">
+    <header class="settings-heading"><span class="eyebrow">Drycode</span><h1>Settings</h1><p>Manage the providers and runtime used by your Sessions.</p></header>
+    <section class="settings-section"><div><h2>Model providers</h2><p>Providers currently available to the model selector.</p></div><div class="settings-list">${MODEL_PROVIDERS.map((provider) => `<article class="settings-row"><span class="provider-mark"><img src="${provider.icon}" alt=""></span><span><b>${escapeHtml(provider.name)}</b><small>${provider.models.length} models available</small></span><strong>Active</strong></article>`).join("")}</div></section>
+    <section class="settings-section"><div><h2>Runtime</h2><p>Replace the current UI and Harness Runtime Generation.</p></div><div class="settings-list"><article class="settings-row"><span class="provider-mark">${icon("refresh-cw")}</span><span><b>Reload Drycode</b><small>Durable Sessions remain available</small></span><button data-action="reload">Reload</button></article></div></section>
+  </main>`;
 }
 
 function featuredSessionCard(session) {
@@ -147,19 +182,19 @@ function navigationView() {
       <div class="settled-heading"><span>Settled</span><i></i></div>
       <div class="settled-sessions">${settled.map(settledSessionRow).join("")}</div>
     </div>
-    <footer class="sidebar-footer"><button data-action="model">${icon("settings")}<span>Settings</span></button><button class="sidebar-icon" data-action="reload" aria-label="Reload Runtime" title="Reload Runtime">${icon("refresh-cw")}</button></footer>
+    <footer class="sidebar-footer"><button class="${state.page === "settings" ? "selected" : ""}" data-action="settings">${icon("settings")}<span>Settings</span></button><button class="sidebar-icon" data-action="reload" aria-label="Reload Runtime" title="Reload Runtime">${icon("refresh-cw")}</button></footer>
   </nav>`;
 }
 
 function modal() {
   if (!state.modal) return "";
-  if (state.modal === "model") return `<div class="modal-shade" data-dismiss="true"><section class="dialog" role="dialog" aria-modal="true" aria-labelledby="model-title"><div class="dialog-title"><span class="dialog-icon violet">${icon("cpu")}</span><div><span class="eyebrow">Session configuration</span><h2 id="model-title">Configure Model</h2></div></div><p>The Model Provider owns discovery and credentials. This choice applies to the current Session.</p><label>Provider<select id="provider"><option ${state.model.provider === "Anthropic" ? "selected" : ""}>Anthropic</option><option ${state.model.provider === "OpenAI" ? "selected" : ""}>OpenAI</option><option ${state.model.provider === "Google" ? "selected" : ""}>Google</option></select></label><label>Model<select id="model"><option ${state.model.name === "Claude Sonnet 4" ? "selected" : ""}>Claude Sonnet 4</option><option ${state.model.name === "Claude Opus 4" ? "selected" : ""}>Claude Opus 4</option><option ${state.model.name === "Claude Haiku 3.5" ? "selected" : ""}>Claude Haiku 3.5</option></select></label><label>API credential<input type="password" value="placeholder-credential" aria-label="API credential"></label><div class="dialog-actions"><button class="plain-button" data-action="close-modal">Cancel</button><button class="primary-button" data-action="save-model">${icon("check")}<span>Use Model</span></button></div></section></div>`;
   if (state.modal === "reload") return `<div class="modal-shade" data-dismiss="true"><section class="dialog" role="dialog" aria-modal="true" aria-labelledby="reload-title"><div class="dialog-title"><span class="dialog-icon amber">${icon("refresh-cw")}</span><div><span class="eyebrow">Runtime lifecycle</span><h2 id="reload-title">Reload the Runtime?</h2></div></div><p>Drycode will stop the complete UI and Harness Runtime Generation, then start a fresh generation. Durable Sessions remain available.</p><div class="reload-note">${icon("triangle-alert")}<span>Active work will be interrupted. Your Session record stays safe.</span></div><div class="dialog-actions"><button class="plain-button" data-action="close-modal">Cancel</button><button class="danger-button" data-action="confirm-reload">${icon("refresh-cw")}<span>Reload Drycode</span></button></div></section></div>`;
   return `<div class="modal-shade"><section class="dialog reload-progress" role="dialog" aria-modal="true"><span class="dialog-icon amber">${icon("refresh-cw")}</span><span class="eyebrow">Runtime lifecycle</span><h2>Reloading Runtime...</h2><p>Stopping the current generation and starting a fresh UI and Harness pair.</p><div class="progress-track"><i></i></div><small>Starting Runtime Generation 19</small></section></div>`;
 }
 
 function render() {
-  document.querySelector("#app").innerHTML = `<div class="app-frame">${topbar()}<div class="nav-layout ${state.sidebarCollapsed ? "sidebar-collapsed" : ""}">${navigationView()}<main class="chat-column">${messageStream()}${composer()}</main></div></div>${modal()}${state.toast ? `<div class="toast" role="status">${icon("info")}<span>${escapeHtml(state.toast)}</span></div>` : ""}`;
+  const content = state.page === "settings" ? settingsPage() : `<main class="chat-column">${messageStream()}${composer()}</main>`;
+  document.querySelector("#app").innerHTML = `<div class="app-frame">${topbar()}<div class="nav-layout ${state.sidebarCollapsed ? "sidebar-collapsed" : ""}">${navigationView()}${content}</div></div>${modal()}${state.toast ? `<div class="toast" role="status">${icon("info")}<span>${escapeHtml(state.toast)}</span></div>` : ""}`;
   if (window.lucide) window.lucide.createIcons();
   bind();
 }
@@ -175,6 +210,8 @@ function selectSession(id) {
   window.clearTimeout(state.runTimer);
   const session = state.sessions.find((item) => item.id === id);
   state.activeSession = id;
+  state.page = "chat";
+  state.composerMenu = null;
   state.modal = null;
   state.running = session?.running ?? false;
   state.stage = state.running ? "Run active" : "Ready";
@@ -186,6 +223,8 @@ function newSession() {
   const workspace = state.workspaceFilter === "all" ? state.workspace.name : state.workspaceFilter;
   state.sessions.unshift({ id, workspace, active: true, running: false, title: "Untitled Session", summary: "No messages yet", time: "Now", messages: [], tools: [] });
   state.activeSession = id;
+  state.page = "chat";
+  state.composerMenu = null;
   state.running = false;
   state.draft = "";
   state.modal = null;
@@ -225,6 +264,8 @@ async function chooseWorkspace() {
 
 function filterWorkspace(name) {
   state.workspaceFilter = name;
+  state.page = "chat";
+  state.composerMenu = null;
   const workspace = state.workspaces.find((item) => item.name === name);
   if (workspace) state.workspace = workspace;
   const sessions = visibleSessions();
@@ -292,8 +333,22 @@ function bind() {
   document.querySelectorAll("[data-action]").forEach((element) => element.addEventListener("click", (event) => {
     const action = element.dataset.action;
     if (action === "send") event.preventDefault();
-    if (["model", "reload"].includes(action)) state.modal = action;
+    if (action === "reload") state.modal = action;
     if (action === "close-modal") state.modal = null;
+    if (action === "settings") {
+      state.page = "settings";
+      state.composerMenu = null;
+      return render();
+    }
+    if (action === "toggle-model") {
+      state.providerView = state.model.provider;
+      state.composerMenu = state.composerMenu === "model" ? null : "model";
+      return render();
+    }
+    if (action === "toggle-thinking") {
+      state.composerMenu = state.composerMenu === "thinking" ? null : "thinking";
+      return render();
+    }
     if (action === "new-session") return newSession();
     if (action === "interrupt") return interrupt();
     if (action === "send") return send();
@@ -303,17 +358,25 @@ function bind() {
       state.sidebarCollapsed = !state.sidebarCollapsed;
       return render();
     }
-    if (action === "save-model") {
-      state.model.provider = document.querySelector("#provider").value;
-      state.model.name = document.querySelector("#model").value;
-      state.modal = null;
-      state.toast = "Model configuration saved for this Session";
-    }
     if (action === "confirm-reload") return confirmReload();
     render();
   }));
   document.querySelectorAll("[data-session]").forEach((element) => element.addEventListener("click", () => selectSession(element.dataset.session)));
   document.querySelectorAll("[data-workspace-filter]").forEach((element) => element.addEventListener("click", () => filterWorkspace(element.dataset.workspaceFilter)));
+  document.querySelectorAll("[data-provider-option]").forEach((element) => element.addEventListener("click", () => {
+    state.providerView = element.dataset.providerOption;
+    render();
+  }));
+  document.querySelectorAll("[data-model-option]").forEach((element) => element.addEventListener("click", () => {
+    state.model = { provider: element.dataset.modelProvider, name: element.dataset.modelOption, ready: true };
+    state.composerMenu = null;
+    render();
+  }));
+  document.querySelectorAll("[data-thinking-option]").forEach((element) => element.addEventListener("click", () => {
+    state.thinking = element.dataset.thinkingOption;
+    state.composerMenu = null;
+    render();
+  }));
   const workspaceTabs = document.querySelector(".workspace-tabs");
   if (workspaceTabs) {
     workspaceTabs.scrollLeft = state.workspaceScroll;
@@ -331,11 +394,17 @@ function bind() {
     });
   });
   document.querySelectorAll("[data-composer]").forEach((form) => form.addEventListener("submit", (event) => { event.preventDefault(); send(); }));
+  document.querySelector(".chat-column")?.addEventListener("click", (event) => {
+    if (state.composerMenu && !event.target.closest(".composer-control")) {
+      state.composerMenu = null;
+      render();
+    }
+  });
   document.querySelectorAll(".modal-shade[data-dismiss]").forEach((shade) => shade.addEventListener("click", (event) => { if (event.target === shade) { state.modal = null; render(); } }));
 }
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && state.modal) { state.modal = null; render(); }
+  if (event.key === "Escape" && (state.modal || state.composerMenu)) { state.modal = null; state.composerMenu = null; render(); }
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); showToast("Session search would open here"); }
   if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === "o") { event.preventDefault(); newSession(); }
 });
