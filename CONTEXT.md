@@ -80,12 +80,8 @@ The UI Runtime capability that loads Fluent FTL catalogs declared by UI Extensio
 _Avoid_: localization Extension, language-pack Extension
 
 **Runtime Generation**:
-One supervised instance of the resolved Extension Graph, the runtimes required by its Host, and the activation state of every installed Extension. A Desktop Runtime Generation pairs UI and Backend runtimes through the UI-Backend Bridge; a Headless Runtime Generation runs the Backend without a UI Runtime or Shell. Loaded Extensions start, run, and stop as one unit.
+One supervised instance of the resolved Extension Graph, paired UI and Backend runtimes, their UI-Backend Bridge, and the activation state of every installed Extension. Loaded Extensions start, run, and stop as one unit.
 _Avoid_: independent UI restart, silently skipped Extension
-
-**Headless Host**:
-The terminal entry point that supervises a Headless Runtime Generation and exposes Drycode Agent through one-shot Print or persistent JSONL RPC operation.
-_Avoid_: terminal UI, CLI Extension, desktop client
 
 **Recovery Surface**:
 The minimal Core-owned lifecycle interface shown when no Runtime Generation is running.
@@ -100,7 +96,7 @@ A conventional DOM identifier through which fully trusted UI Extensions may oppo
 _Avoid_: attachment point, provided capability, required UI contract
 
 **Starter Extension Set**:
-The recommended Extensions seeded and initially enabled by the installer to provide a basic chat experience.
+The recommended Extension catalog offered by the installer for optional installation or clean replacement. Selected packages become ordinary user-owned Installed Extensions.
 _Avoid_: built-in features, default IDE
 
 **Workspace**:
