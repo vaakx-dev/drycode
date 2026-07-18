@@ -83,9 +83,7 @@ const visibleSessions = () => state.workspaceFilter === "all" ? state.sessions :
 function topbar() {
   return `<header class="topbar">
     <button class="topbar-collapse" data-action="collapse-sidebar" aria-label="${state.sidebarCollapsed ? "Expand" : "Collapse"} sidebar">${icon(state.sidebarCollapsed ? "panel-left-open" : "panel-left-close")}</button>
-    <span class="topbar-title">${escapeHtml(activeSession().title)}</span>
     <span class="window-drag"></span>
-    <span class="runtime-state ${state.running ? "running" : ""}">${icon(state.running ? "loader-circle" : "circle-check")}<span>${state.running ? "Run active" : "Ready"}</span></span>
     <div class="window-controls" aria-label="Window controls"><button aria-label="Minimize">${icon("minus")}</button><button aria-label="Maximize">${icon("square")}</button><button aria-label="Close">${icon("x")}</button></div>
   </header>`;
 }
