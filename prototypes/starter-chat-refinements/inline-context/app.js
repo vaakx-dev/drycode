@@ -1,0 +1,265 @@
+const state = {
+  workspace: { name: "drycode", path: "D:\\work\\drycode" },
+  model: { provider: "Anthropic", name: "Claude Sonnet 4", ready: true },
+  activeSession: "contract",
+  running: true,
+  stage: "Reading Workspace context",
+  modal: null,
+  draft: "",
+  toast: "",
+  runTimer: null,
+  toastTimer: null,
+  sessions: [
+    {
+      id: "contract",
+      title: "Shape the starter chat",
+      summary: "Map the smallest useful Windows surface",
+      time: "Now",
+      messages: [
+        { role: "user", text: "What does the starter chat need to make visible?" },
+        { role: "assistant", text: "Workspace, durable Sessions, the selected Model, and a clear view of each Run. I will keep the surface focused on asking Drycode to work and watching what it does." },
+      ],
+      tools: [
+        { name: "session_lookup", detail: "Durable Session record", status: "completed", output: "Session contract | 12 records" },
+        { name: "workspace_scan", detail: "Workspace context", status: "running", output: "Reading workspace context..." },
+      ],
+    },
+    {
+      id: "harness",
+      title: "Extract the Harness",
+      summary: "Compare runtime boundaries and hand-offs",
+      time: "2h",
+      messages: [{ role: "assistant", text: "A durable Session remains linear and can have at most one active Run." }],
+      tools: [{ name: "read", detail: "Runtime notes", status: "completed", output: "Read 24 lines" }],
+    },
+    {
+      id: "installer",
+      title: "Plan the Windows install",
+      summary: "Stopped after comparing package formats",
+      time: "Fri",
+      messages: [{ role: "user", text: "Keep the first install experience small and understandable." }],
+      tools: [],
+    },
+    {
+      id: "recovery",
+      title: "Recovery surface notes",
+      summary: "Capture what remains available during Reload",
+      time: "Mon",
+      messages: [{ role: "assistant", text: "Reload replaces the Runtime Generation while the desktop window stays open." }],
+      tools: [],
+    },
+  ],
+};
+
+const escapeHtml = (value) => String(value)
+  .replaceAll("&", "&amp;")
+  .replaceAll("<", "&lt;")
+  .replaceAll(">", "&gt;")
+  .replaceAll('"', "&quot;");
+
+const icon = (name, label = "") => `<i data-lucide="${name}"${label ? ` aria-label="${label}"` : ""}></i>`;
+const activeSession = () => state.sessions.find((session) => session.id === state.activeSession) || state.sessions[0];
+const activeTools = () => activeSession().tools;
+
+function titlebar() {
+  return `<header class="titlebar">
+    <span class="brand-mark">${icon("panels-top-left")}</span>
+    <strong class="wordmark">drycode</strong><span class="title-separator">/</span><span class="window-title">Chat</span>
+    <span class="window-drag"></span>
+    <span class="runtime-state">${icon(state.running ? "loader-circle" : "circle-check")}<span>${state.running ? "Run active" : "Ready"}</span></span>
+    <div class="window-controls" aria-label="Window controls"><button aria-label="Minimize">${icon("minus")}</button><button aria-label="Maximize">${icon("square")}</button><button aria-label="Close">${icon("x")}</button></div>
+  </header>`;
+}
+
+function workspaceButton(extraClass = "") {
+  return `<button class="workspace-button ${extraClass}" data-action="workspace" title="Select Workspace">
+    <span class="context-icon workspace-icon">${icon("folder-open")}</span><span class="button-copy"><b>${escapeHtml(state.workspace.name)}</b><small>${escapeHtml(state.workspace.path)}</small></span><span class="chevron">${icon("chevron-down")}</span>
+  </button>`;
+}
+
+function sessionRows() {
+  return state.sessions.map((session) => `<button class="session-row ${session.id === state.activeSession ? "selected" : ""}" data-session="${session.id}">
+    <span class="session-icon">${icon(session.id === state.activeSession ? "circle-dot" : "circle")}</span><span class="session-row-copy"><b>${escapeHtml(session.title)}</b><small>${escapeHtml(session.summary)}</small></span><time>${session.time}</time>
+  </button>`).join("");
+}
+
+function contextHeader() {
+  const session = activeSession();
+  return `<header class="context-header">
+    <div class="session-title"><span class="eyebrow">Conversation</span><div class="title-line"><span class="status-icon ${state.running ? "busy" : "ready"}">${icon(state.running ? "loader-circle" : "circle-check")}</span><h1>${escapeHtml(session.title)}</h1></div></div>
+    <span class="header-divider"></span>
+    <div class="inline-context" aria-label="Current chat context">
+      <button class="context-chip" data-action="workspace">${icon("folder-open")}<span>${escapeHtml(state.workspace.name)}</span></button>
+      <button class="context-chip" data-action="sessions">${icon("message-square")}<span>Session</span></button>
+      <button class="context-chip" data-action="model">${icon("cpu")}<span>${escapeHtml(state.model.name)}</span></button>
+    </div>
+    <span class="grow"></span>
+    <span class="run-stage">${state.running ? escapeHtml(state.stage) : "Durable Session ready"}</span>
+    <button class="subtle-button" data-action="sessions">${icon("list") }<span>Sessions</span></button>
+  </header>`;
+}
+
+function messageStream() {
+  const messages = activeSession().messages.map((message) => `<article class="message ${message.role}">
+    <div class="message-label"><span class="avatar ${message.role}">${icon(message.role === "user" ? "user-round" : "bot")}</span><b>${message.role === "user" ? "You" : "Drycode"}</b><time>${message.role === "user" ? "just now" : "response"}</time></div>
+    <p>${escapeHtml(message.text)}</p>
+  </article>`).join("");
+  return `<div class="message-stream">${messages || `<div class="empty-message">${icon("message-circle")}<b>Start this Session</b><span>Ask Drycode to work in ${escapeHtml(state.workspace.name)}.</span></div>`}<section class="inline-tools" aria-label="Tool activity"><div class="section-kicker"><span>${icon("wrench")}Tool activity</span><span class="muted">${activeTools().length} events</span></div>${toolCards()}</section></div>`;
+}
+
+function toolCards() {
+  if (!activeTools().length) return `<div class="no-activity">No Tool activity yet.</div>`;
+  return activeTools().map((tool) => `<details class="tool-card" ${tool.status === "running" ? "open" : ""}>
+    <summary><span class="tool-mark ${tool.status}">${icon(tool.status === "running" ? "loader-circle" : "circle-check")}</span><b>${escapeHtml(tool.name)}</b><span class="tool-detail">${escapeHtml(tool.detail)}</span><span class="tool-status ${tool.status}">${tool.status === "running" ? "Running" : "Completed"}</span>${icon("chevron-down", "Toggle tool output")}</summary>
+    <pre>${escapeHtml(tool.output)}</pre>
+  </details>`).join("");
+}
+
+function composer() {
+  return `<form class="composer" data-composer>
+    <textarea aria-label="Message" placeholder="Message Drycode in this Session...">${escapeHtml(state.draft)}</textarea>
+    <div class="composer-bar"><div class="composer-context">${icon("panel-left")}<span>${escapeHtml(state.workspace.name)}</span><span class="context-slash">/</span><span>${escapeHtml(activeSession().title)}</span><span class="context-slash">/</span><span>${escapeHtml(state.model.name)}</span></div><span class="grow"></span>${state.running ? `<button type="button" class="interrupt-button" data-action="interrupt">${icon("square")}<span>Interrupt</span></button>` : `<button type="submit" class="send-button" data-action="send"><span>Send</span>${icon("arrow-up")}</button>`}</div>
+  </form>`;
+}
+
+function navigationView() {
+  return `<nav class="navigation-view" aria-label="Drycode navigation">
+    <div class="nav-workspace"><span class="eyebrow">Workspace</span>${workspaceButton()}</div>
+    <button class="new-session primary-button" data-action="new-session">${icon("plus")}<span>New Session</span></button>
+    <div class="nav-section"><span class="eyebrow">Workspace</span><button class="nav-link active">${icon("messages-square")}<span>Sessions</span><em>${state.sessions.length}</em></button></div>
+    <div class="session-nav"><div class="section-kicker"><span>Recent Sessions</span><span class="grow"></span><button class="mini-button" data-action="new-session" aria-label="New Session">${icon("plus")}</button></div>${sessionRows()}</div>
+    <div class="nav-footer"><div class="runtime-summary"><span class="status-icon ${state.running ? "busy" : "ready"}">${icon(state.running ? "loader-circle" : "circle-check")}</span><span><b>${state.running ? "Run active" : "Runtime ready"}</b><small>${state.running ? "Harness is observing" : "Ready for input"}</small></span></div><button class="footer-link" data-action="reload">${icon("refresh-cw")}<span>Reload Runtime</span></button></div>
+  </nav>`;
+}
+
+function modal() {
+  if (!state.modal) return "";
+  if (state.modal === "workspace") return `<div class="modal-shade" data-dismiss="true"><section class="dialog" role="dialog" aria-modal="true" aria-labelledby="workspace-title"><div class="dialog-title"><span class="dialog-icon">${icon("folder-open")}</span><div><span class="eyebrow">Workspace</span><h2 id="workspace-title">Select a Workspace</h2></div></div><p>A Session is bound to the Workspace selected when it is created.</p><div class="workspace-options"><button data-workspace="drycode|D:\\work\\drycode" class="option-row ${state.workspace.name === "drycode" ? "chosen" : ""}">${icon("folder")}<span><b>drycode</b><small>D:\\work\\drycode</small></span>${state.workspace.name === "drycode" ? icon("check") : ""}</button><button data-workspace="agent-lab|D:\\work\\agent-lab" class="option-row ${state.workspace.name === "agent-lab" ? "chosen" : ""}">${icon("folder")}<span><b>agent-lab</b><small>D:\\work\\agent-lab</small></span>${state.workspace.name === "agent-lab" ? icon("check") : ""}</button><button class="option-row" data-action="choose-folder">${icon("folder-plus")}<span><b>Choose another folder</b><small>Open the native folder picker stub</small></span></button></div><div class="dialog-actions"><button class="plain-button" data-action="close-modal">Cancel</button></div></section></div>`;
+  if (state.modal === "model") return `<div class="modal-shade" data-dismiss="true"><section class="dialog" role="dialog" aria-modal="true" aria-labelledby="model-title"><div class="dialog-title"><span class="dialog-icon violet">${icon("cpu")}</span><div><span class="eyebrow">Session configuration</span><h2 id="model-title">Configure Model</h2></div></div><p>The Model Provider owns discovery and credentials. This choice applies to the current Session.</p><label>Provider<select id="provider"><option ${state.model.provider === "Anthropic" ? "selected" : ""}>Anthropic</option><option ${state.model.provider === "OpenAI" ? "selected" : ""}>OpenAI</option><option ${state.model.provider === "Google" ? "selected" : ""}>Google</option></select></label><label>Model<select id="model"><option ${state.model.name === "Claude Sonnet 4" ? "selected" : ""}>Claude Sonnet 4</option><option ${state.model.name === "Claude Opus 4" ? "selected" : ""}>Claude Opus 4</option><option ${state.model.name === "Claude Haiku 3.5" ? "selected" : ""}>Claude Haiku 3.5</option></select></label><label>API credential<input type="password" value="placeholder-credential" aria-label="API credential"></label><div class="dialog-actions"><button class="plain-button" data-action="close-modal">Cancel</button><button class="primary-button" data-action="save-model">${icon("check")}<span>Use Model</span></button></div></section></div>`;
+  if (state.modal === "sessions") return `<div class="modal-shade" data-dismiss="true"><section class="dialog session-dialog" role="dialog" aria-modal="true" aria-labelledby="sessions-title"><div class="dialog-title"><span class="dialog-icon">${icon("messages-square")}</span><div><span class="eyebrow">${escapeHtml(state.workspace.name)}</span><h2 id="sessions-title">Open a Session</h2></div></div><p>Resume a durable conversation or start a new one in this Workspace.</p><div class="dialog-sessions">${sessionRows()}</div><div class="dialog-actions"><button class="plain-button" data-action="close-modal">Cancel</button><button class="primary-button" data-action="new-session">${icon("plus")}<span>New Session</span></button></div></section></div>`;
+  if (state.modal === "reload") return `<div class="modal-shade" data-dismiss="true"><section class="dialog" role="dialog" aria-modal="true" aria-labelledby="reload-title"><div class="dialog-title"><span class="dialog-icon amber">${icon("refresh-cw")}</span><div><span class="eyebrow">Runtime lifecycle</span><h2 id="reload-title">Reload the Runtime?</h2></div></div><p>Drycode will stop the complete UI and Harness Runtime Generation, then start a fresh generation. Durable Sessions remain available.</p><div class="reload-note">${icon("triangle-alert")}<span>Active work will be interrupted. Your Session record stays safe.</span></div><div class="dialog-actions"><button class="plain-button" data-action="close-modal">Cancel</button><button class="danger-button" data-action="confirm-reload">${icon("refresh-cw")}<span>Reload Drycode</span></button></div></section></div>`;
+  return `<div class="modal-shade"><section class="dialog reload-progress" role="dialog" aria-modal="true"><span class="dialog-icon amber">${icon("refresh-cw")}</span><span class="eyebrow">Runtime lifecycle</span><h2>Reloading Runtime...</h2><p>Stopping the current generation and starting a fresh UI and Harness pair.</p><div class="progress-track"><i></i></div><small>Starting Runtime Generation 19</small></section></div>`;
+}
+
+function render() {
+  document.querySelector("#app").innerHTML = `<div class="app-frame">${titlebar()}<div class="nav-layout">${navigationView()}<main class="chat-column">${contextHeader()}${messageStream()}${composer()}</main></div></div>${modal()}${state.toast ? `<div class="toast" role="status">${icon("info")}<span>${escapeHtml(state.toast)}</span></div>` : ""}`;
+  if (window.lucide) window.lucide.createIcons();
+  bind();
+}
+
+function showToast(text) {
+  window.clearTimeout(state.toastTimer);
+  state.toast = text;
+  render();
+  state.toastTimer = window.setTimeout(() => { state.toast = ""; render(); }, 1800);
+}
+
+function selectSession(id) {
+  window.clearTimeout(state.runTimer);
+  state.activeSession = id;
+  state.modal = null;
+  state.running = false;
+  state.stage = "Ready";
+  render();
+}
+
+function newSession() {
+  const id = `session-${state.sessions.length + 1}`;
+  state.sessions.unshift({ id, title: "Untitled Session", summary: "No messages yet", time: "Now", messages: [], tools: [] });
+  state.activeSession = id;
+  state.running = false;
+  state.draft = "";
+  state.modal = null;
+  render();
+}
+
+function completeRun() {
+  const session = activeSession();
+  session.tools = session.tools.map((tool) => tool.status === "running" ? { ...tool, status: "completed", output: "Workspace context ready\nRun completed successfully." } : tool);
+  session.messages.push({ role: "assistant", text: "Workspace context is ready. The Tool result is attached to this Run." });
+  state.running = false;
+  state.stage = "Run completed";
+  render();
+}
+
+function send() {
+  const text = state.draft.trim();
+  if (!text || state.running) return;
+  const session = activeSession();
+  session.messages.push({ role: "user", text });
+  session.messages.push({ role: "assistant", text: "I will inspect the Workspace and report each Tool as it runs." });
+  session.tools.push({ name: "workspace_scan", detail: "Workspace context", status: "running", output: "Inspecting Workspace..." });
+  session.summary = text;
+  state.draft = "";
+  state.running = true;
+  state.stage = "Inspecting Workspace";
+  render();
+  state.runTimer = window.setTimeout(completeRun, 3500);
+}
+
+function interrupt() {
+  window.clearTimeout(state.runTimer);
+  const session = activeSession();
+  state.running = false;
+  state.stage = "Interrupted by user";
+  session.tools = session.tools.map((tool) => tool.status === "running" ? { ...tool, status: "completed", output: `${tool.output}\nRun interrupted by user.` } : tool);
+  session.messages.push({ role: "assistant", text: "Run interrupted. Completed messages and Tool results remain in this Session." });
+  render();
+}
+
+function confirmReload() {
+  window.clearTimeout(state.runTimer);
+  state.modal = "reloading";
+  render();
+  window.setTimeout(() => {
+    state.modal = null;
+    state.running = false;
+    state.stage = "Ready after Reload";
+    activeTools().forEach((tool) => { tool.status = "completed"; });
+    render();
+    showToast("Runtime Generation reloaded");
+  }, 1400);
+}
+
+function bind() {
+  document.querySelectorAll("[data-action]").forEach((element) => element.addEventListener("click", (event) => {
+    const action = element.dataset.action;
+    if (action === "send") event.preventDefault();
+    if (["workspace", "model", "sessions", "reload"].includes(action)) state.modal = action;
+    if (action === "close-modal") state.modal = null;
+    if (action === "new-session") return newSession();
+    if (action === "interrupt") return interrupt();
+    if (action === "send") return send();
+    if (action === "choose-folder") return showToast("Native folder picker would open here");
+    if (action === "save-model") {
+      state.model.provider = document.querySelector("#provider").value;
+      state.model.name = document.querySelector("#model").value;
+      state.modal = null;
+      state.toast = "Model configuration saved for this Session";
+    }
+    if (action === "confirm-reload") return confirmReload();
+    render();
+  }));
+  document.querySelectorAll("[data-session]").forEach((element) => element.addEventListener("click", () => selectSession(element.dataset.session)));
+  document.querySelectorAll("[data-workspace]").forEach((element) => element.addEventListener("click", () => {
+    const [name, path] = element.dataset.workspace.split("|");
+    state.workspace = { name, path };
+    state.modal = null;
+    state.toast = `Workspace changed to ${name}`;
+    render();
+  }));
+  document.querySelectorAll("textarea").forEach((textarea) => {
+    textarea.addEventListener("input", () => { state.draft = textarea.value; });
+    textarea.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); state.draft = textarea.value; send(); }
+    });
+  });
+  document.querySelectorAll("[data-composer]").forEach((form) => form.addEventListener("submit", (event) => { event.preventDefault(); send(); }));
+  document.querySelectorAll(".modal-shade[data-dismiss]").forEach((shade) => shade.addEventListener("click", (event) => { if (event.target === shade) { state.modal = null; render(); } }));
+}
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && state.modal) { state.modal = null; render(); }
+});
+
+render();
