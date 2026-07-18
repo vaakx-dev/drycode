@@ -31,8 +31,12 @@ _Avoid_: global service, cross-process service
 The frozen result of composing all Service Slots for one runtime generation. The UI and Harness runtimes have separate registries.
 _Avoid_: mutable container, Core service registry
 
+**UI Runtime**:
+The replaceable runtime that composes UI services, executes UI entry points, and mounts the effective Shell service.
+_Avoid_: Core UI, permanent renderer
+
 **Shell Extension**:
-The one active Drycode Extension that owns the application's root user interface and defines how other UI contributions compose.
+The Drycode Extension that supplies the effective base provider for the Shell service. It owns the application's root user interface and defines how other UI contributions compose.
 _Avoid_: core shell, built-in shell
 
 **Starter Extension Set**:
