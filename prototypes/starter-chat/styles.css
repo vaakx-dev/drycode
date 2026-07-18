@@ -49,16 +49,16 @@ svg { width: 15px; height: 15px; stroke-width: 1.8; }
 .window-controls button:hover { background: #2a2d32; color: var(--text); }
 .window-controls button:last-child:hover { background: #bc443c; color: white; }
 .window-controls svg { width: 13px; height: 13px; }
-.nav-layout { min-height: 0; display: grid; grid-template-columns: 326px minmax(0, 1fr); height: calc(100% - 39px); }
+.nav-layout { min-height: 0; display: grid; grid-template-columns: 326px minmax(0, 1fr); height: calc(100% - 39px); transition: grid-template-columns .16s ease; }
 .nav-layout.sidebar-collapsed { grid-template-columns: 56px minmax(0, 1fr); }
-.navigation-view { min-height: 0; display: flex; flex-direction: column; background: #121416; }
-.navigation-view.collapsed .sidebar-brand { justify-content: center; padding: 0; }
-.navigation-view.collapsed .sidebar-brand strong, .navigation-view.collapsed .dev-badge, .navigation-view.collapsed .sidebar-actions span, .navigation-view.collapsed .sidebar-actions kbd, .navigation-view.collapsed .workspace-tabs, .navigation-view.collapsed .sidebar-sessions, .navigation-view.collapsed .sidebar-footer span { display: none; }
+.navigation-view { position: relative; z-index: 10; min-height: 0; display: flex; flex-direction: column; background: #121416; }
+.navigation-view.collapsed .sidebar-brand { height: 56px; justify-content: center; padding: 0; }
+.navigation-view.collapsed .sidebar-brand strong, .navigation-view.collapsed .dev-badge, .navigation-view.collapsed .sidebar-actions span, .navigation-view.collapsed .sidebar-actions kbd, .navigation-view.collapsed .sidebar-footer span { display: none; }
 .navigation-view.collapsed .sidebar-logo { margin: 0; }
-.navigation-view.collapsed .sidebar-actions { padding: 3px 8px; }
-.navigation-view.collapsed .sidebar-actions button { justify-content: center; padding: 0; }
-.navigation-view.collapsed .sidebar-footer { flex-direction: column; padding: 8px; }
-.navigation-view.collapsed .sidebar-footer > button:first-child { width: 30px; flex: none; justify-content: center; padding: 0; }
+.navigation-view.collapsed .sidebar-actions { gap: 2px; padding: 7px 8px 10px; }
+.navigation-view.collapsed .sidebar-actions button { width: 40px; height: 40px; justify-content: center; padding: 0; }
+.navigation-view.collapsed .sidebar-footer { flex-direction: column; gap: 3px; padding: 8px; }
+.navigation-view.collapsed .sidebar-footer > button:first-child, .navigation-view.collapsed .sidebar-footer .sidebar-icon { width: 40px; height: 40px; flex: none; justify-content: center; padding: 0; }
 .sidebar-brand { height: 72px; display: flex; align-items: center; gap: 9px; padding: 0 17px; }
 .sidebar-brand strong { font-size: 17px; letter-spacing: -.02em; }
 .sidebar-logo { display: grid; width: 26px; height: 26px; place-items: center; margin-left: 5px; border-radius: 5px; background: #f0f2f5; color: #17191c; }
@@ -73,6 +73,26 @@ svg { width: 15px; height: 15px; stroke-width: 1.8; }
 .sidebar-actions svg { width: 17px; height: 17px; }
 .sidebar-actions span { font-size: 12px; font-weight: 600; }
 kbd { margin-left: auto; border: 0; border-radius: 6px; background: #1d2024; padding: 5px 7px; color: #777f89; font: 600 9px var(--mono); }
+.rail-navigation { position: relative; min-height: 0; flex: 1; display: grid; align-content: start; justify-items: center; gap: 3px; border-top: 1px solid #24282d; padding: 10px 8px; }
+.rail-button { position: relative; width: 40px; height: 40px; display: grid; place-items: center; border-color: transparent; background: transparent; padding: 0; color: #747c87; }
+.rail-button:hover, .rail-button.selected { border-color: #343941; background: #1d2024; color: #d9dde2; }
+.rail-button svg { width: 17px; height: 17px; }
+.rail-button small { position: absolute; right: 3px; bottom: 3px; min-width: 14px; height: 14px; display: grid; place-items: center; border-radius: 7px; background: #3b424b; color: #eef0f3; font: 700 8px var(--mono); }
+.rail-flyout { position: absolute; z-index: 30; top: 8px; left: calc(100% + 8px); width: 286px; max-height: min(520px, calc(100vh - 190px)); overflow: auto; border: 1px solid #3d434c; border-radius: 7px; background: #1b1e22; box-shadow: 0 16px 44px #000c; padding: 8px; scrollbar-color: #4b5361 transparent; }
+.rail-flyout header { height: 34px; display: flex; align-items: center; padding: 0 4px 6px 8px; color: #d9dde2; }
+.rail-flyout header strong { font-size: 11px; }
+.rail-flyout header button { width: 28px; height: 28px; display: grid; place-items: center; margin-left: auto; border-color: transparent; background: transparent; padding: 0; color: #8d959f; }
+.rail-flyout header button:hover { background: #292d33; color: var(--text); }
+.rail-flyout header svg { width: 14px; height: 14px; }
+.rail-list { display: grid; gap: 2px; }
+.rail-list > button { width: 100%; min-width: 0; display: grid; grid-template-columns: 17px minmax(0, 1fr) auto; align-items: center; gap: 8px; border-color: transparent; background: transparent; padding: 9px 8px; color: #8e96a1; text-align: left; }
+.rail-list > button:hover, .rail-list > button.selected { background: #292d33; color: #e0e3e7; }
+.rail-list > button > svg { width: 14px; height: 14px; }
+.rail-list > button > svg:last-child { color: #b9c0c8; }
+.rail-list > button > span { min-width: 0; overflow: hidden; font-size: 10px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.rail-list > button > small { color: #6f7781; font: 9px var(--mono); }
+.session-flyout .rail-list > button > svg.lucide-loader-circle { color: var(--amber); animation: spin 2s linear infinite; }
+.rail-list-heading { border-top: 1px solid #30353c; margin-top: 5px; padding: 11px 8px 5px; color: #6f7781; font: 700 8px var(--mono); letter-spacing: .12em; text-transform: uppercase; }
 .workspace-tabs { width: calc(100% - 20px); min-width: 0; display: flex; align-items: stretch; gap: 6px; overflow-x: auto; margin: 0 10px; padding: 0 0 11px; scrollbar-width: none; }
 .workspace-tabs::-webkit-scrollbar { display: none; }
 .workspace-tabs button { min-width: 0; height: 35px; display: inline-flex; align-items: center; gap: 7px; flex: none; border: 1px solid #343941; border-radius: 0; background: #17191c; padding: 0 11px; color: #9299a3; font-size: 11px; font-weight: 650; }

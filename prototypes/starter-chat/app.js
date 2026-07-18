@@ -9,6 +9,7 @@ const state = {
   workspaceFilter: "all",
   workspaceScroll: 0,
   sidebarCollapsed: false,
+  railMenu: null,
   page: "chat",
   composerMenu: null,
   providerView: "Anthropic",
@@ -162,27 +163,49 @@ function settledSessionRow(session) {
   </button>`;
 }
 
+function railFlyout(sessions) {
+  if (state.railMenu === "workspaces") return `<section class="rail-flyout workspace-flyout" aria-label="Workspaces">
+    <header><strong>Workspaces</strong><button data-action="choose-folder" aria-label="Add Workspace" title="Add Workspace">${icon("plus")}</button></header>
+    <div class="rail-list"><button class="${state.workspaceFilter === "all" ? "selected" : ""}" data-workspace-filter="all">${icon("folders")}<span>All Workspaces</span>${state.workspaceFilter === "all" ? icon("check") : ""}</button>${state.workspaces.map((workspace) => `<button class="${state.workspaceFilter === workspace.name ? "selected" : ""}" data-workspace-filter="${escapeHtml(workspace.name)}">${icon("folder")}<span>${escapeHtml(workspace.name)}</span>${state.workspaceFilter === workspace.name ? icon("check") : ""}</button>`).join("")}</div>
+  </section>`;
+
+  if (state.railMenu === "sessions") {
+    const active = sessions.filter((session) => session.active);
+    const settled = sessions.filter((session) => !session.active);
+    return `<section class="rail-flyout session-flyout" aria-label="Sessions"><header><strong>Sessions</strong><button data-action="new-session" aria-label="New Session" title="New Session">${icon("plus")}</button></header><div class="rail-list">${active.map((session) => `<button class="${session.id === state.activeSession ? "selected" : ""}" data-session="${session.id}">${icon(session.running ? "loader-circle" : "message-square")}<span>${escapeHtml(session.title)}</span><small>${escapeHtml(session.workspace)}</small></button>`).join("")}${settled.length ? `<span class="rail-list-heading">Settled</span>${settled.map((session) => `<button class="${session.id === state.activeSession ? "selected" : ""}" data-session="${session.id}">${icon("message-square")}<span>${escapeHtml(session.title)}</span><small>${session.time}</small></button>`).join("")}` : ""}</div></section>`;
+  }
+
+  return "";
+}
+
 function navigationView() {
   const sessions = visibleSessions();
   const featured = sessions.filter((session) => session.active);
   const settled = sessions.filter((session) => !session.active);
+  const sessionNavigation = state.sidebarCollapsed
+    ? `<div class="rail-navigation">
+        <button class="rail-button ${state.railMenu === "workspaces" ? "selected" : ""}" data-action="rail-workspaces" aria-label="Workspaces. Current filter: ${escapeHtml(state.workspaceFilter)}" title="Workspaces: ${escapeHtml(state.workspaceFilter)}" aria-expanded="${state.railMenu === "workspaces"}">${icon("folders")}</button>
+        <button class="rail-button ${state.page === "chat" || state.railMenu === "sessions" ? "selected" : ""}" data-action="rail-sessions" aria-label="Sessions. Current: ${escapeHtml(activeSession().title)}" title="Sessions: ${escapeHtml(activeSession().title)}" aria-expanded="${state.railMenu === "sessions"}">${icon("messages-square")}<small>${featured.length}</small></button>
+        ${railFlyout(sessions)}
+      </div>`
+    : `<div class="workspace-tabs">
+        <button class="all-workspaces ${state.workspaceFilter === "all" ? "selected" : ""}" data-workspace-filter="all">All</button>
+        ${state.workspaces.map((workspace) => `<button class="${state.workspaceFilter === workspace.name ? "selected" : ""}" data-workspace-filter="${escapeHtml(workspace.name)}">${icon("folder")}<span>${escapeHtml(workspace.name)}</span></button>`).join("")}
+        <button class="add-workspace" data-action="choose-folder" aria-label="Add Workspace" title="Add Workspace">${icon("plus")}</button>
+      </div>
+      <div class="sidebar-sessions">
+        <div class="featured-sessions">${featured.map(featuredSessionCard).join("")}</div>
+        <div class="settled-heading"><span>Settled</span><i></i></div>
+        <div class="settled-sessions">${settled.map(settledSessionRow).join("")}</div>
+      </div>`;
   return `<nav class="navigation-view ${state.sidebarCollapsed ? "collapsed" : ""}" aria-label="Drycode navigation">
-    <header class="sidebar-brand"><span class="sidebar-logo">${icon("panels-top-left")}</span><strong>Drycode</strong><span class="dev-badge">Dev</span></header>
+    <header class="sidebar-brand"><span class="sidebar-logo" title="Drycode">${icon("panels-top-left")}</span><strong>Drycode</strong><span class="dev-badge">Dev</span></header>
     <div class="sidebar-actions">
-      <button data-action="search">${icon("search")}<span>Search</span><kbd>Ctrl K</kbd></button>
-      <button data-action="new-session">${icon("plus")}<span>New Session</span><kbd>Ctrl Shift O</kbd></button>
+      <button data-action="search" aria-label="Search" title="Search">${icon("search")}<span>Search</span><kbd>Ctrl K</kbd></button>
+      <button data-action="new-session" aria-label="New Session" title="New Session">${icon("plus")}<span>New Session</span><kbd>Ctrl Shift O</kbd></button>
     </div>
-    <div class="workspace-tabs">
-      <button class="all-workspaces ${state.workspaceFilter === "all" ? "selected" : ""}" data-workspace-filter="all">All</button>
-      ${state.workspaces.map((workspace) => `<button class="${state.workspaceFilter === workspace.name ? "selected" : ""}" data-workspace-filter="${escapeHtml(workspace.name)}">${icon("folder")}<span>${escapeHtml(workspace.name)}</span></button>`).join("")}
-      <button class="add-workspace" data-action="choose-folder" aria-label="Add Workspace">${icon("plus")}</button>
-    </div>
-    <div class="sidebar-sessions">
-      <div class="featured-sessions">${featured.map(featuredSessionCard).join("")}</div>
-      <div class="settled-heading"><span>Settled</span><i></i></div>
-      <div class="settled-sessions">${settled.map(settledSessionRow).join("")}</div>
-    </div>
-    <footer class="sidebar-footer"><button class="${state.page === "settings" ? "selected" : ""}" data-action="settings">${icon("settings")}<span>Settings</span></button><button class="sidebar-icon" data-action="reload" aria-label="Reload Runtime" title="Reload Runtime">${icon("refresh-cw")}</button></footer>
+    ${sessionNavigation}
+    <footer class="sidebar-footer"><button class="${state.page === "settings" ? "selected" : ""}" data-action="settings" aria-label="Settings" title="Settings" ${state.page === "settings" ? "aria-current=\"page\"" : ""}>${icon("settings")}<span>Settings</span></button><button class="sidebar-icon" data-action="reload" aria-label="Reload Runtime" title="Reload Runtime">${icon("refresh-cw")}</button></footer>
   </nav>`;
 }
 
@@ -212,6 +235,7 @@ function selectSession(id) {
   state.activeSession = id;
   state.page = "chat";
   state.composerMenu = null;
+  state.railMenu = null;
   state.modal = null;
   state.running = session?.running ?? false;
   state.stage = state.running ? "Run active" : "Ready";
@@ -225,6 +249,7 @@ function newSession() {
   state.activeSession = id;
   state.page = "chat";
   state.composerMenu = null;
+  state.railMenu = null;
   state.running = false;
   state.draft = "";
   state.modal = null;
@@ -239,6 +264,9 @@ async function chooseWorkspace() {
       if (!state.workspaces.some((item) => item.name === workspace.name)) state.workspaces.push(workspace);
       state.workspace = workspace;
       state.workspaceFilter = workspace.name;
+      state.page = "chat";
+      state.composerMenu = null;
+      state.railMenu = null;
       render();
       return;
     }
@@ -254,6 +282,9 @@ async function chooseWorkspace() {
       if (!state.workspaces.some((item) => item.name === name)) state.workspaces.push(workspace);
       state.workspace = workspace;
       state.workspaceFilter = name;
+      state.page = "chat";
+      state.composerMenu = null;
+      state.railMenu = null;
       render();
     });
     picker.click();
@@ -266,6 +297,7 @@ function filterWorkspace(name) {
   state.workspaceFilter = name;
   state.page = "chat";
   state.composerMenu = null;
+  state.railMenu = null;
   const workspace = state.workspaces.find((item) => item.name === name);
   if (workspace) state.workspace = workspace;
   const sessions = visibleSessions();
@@ -333,11 +365,20 @@ function bind() {
   document.querySelectorAll("[data-action]").forEach((element) => element.addEventListener("click", (event) => {
     const action = element.dataset.action;
     if (action === "send") event.preventDefault();
-    if (action === "reload") state.modal = action;
+    if (action === "reload") { state.modal = action; state.railMenu = null; }
     if (action === "close-modal") state.modal = null;
     if (action === "settings") {
       state.page = "settings";
       state.composerMenu = null;
+      state.railMenu = null;
+      return render();
+    }
+    if (action === "rail-workspaces") {
+      state.railMenu = state.railMenu === "workspaces" ? null : "workspaces";
+      return render();
+    }
+    if (action === "rail-sessions") {
+      state.railMenu = state.railMenu === "sessions" ? null : "sessions";
       return render();
     }
     if (action === "toggle-model") {
@@ -353,9 +394,10 @@ function bind() {
     if (action === "interrupt") return interrupt();
     if (action === "send") return send();
     if (action === "choose-folder") return chooseWorkspace();
-    if (action === "search") return showToast("Session search would open here");
+    if (action === "search") { state.railMenu = null; return showToast("Session search would open here"); }
     if (action === "collapse-sidebar") {
       state.sidebarCollapsed = !state.sidebarCollapsed;
+      state.railMenu = null;
       return render();
     }
     if (action === "confirm-reload") return confirmReload();
@@ -400,11 +442,17 @@ function bind() {
       render();
     }
   });
+  document.querySelector(".nav-layout")?.addEventListener("click", (event) => {
+    if (state.railMenu && !event.target.closest(".rail-navigation")) {
+      state.railMenu = null;
+      render();
+    }
+  });
   document.querySelectorAll(".modal-shade[data-dismiss]").forEach((shade) => shade.addEventListener("click", (event) => { if (event.target === shade) { state.modal = null; render(); } }));
 }
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && (state.modal || state.composerMenu)) { state.modal = null; state.composerMenu = null; render(); }
+  if (event.key === "Escape" && (state.modal || state.composerMenu || state.railMenu)) { state.modal = null; state.composerMenu = null; state.railMenu = null; render(); }
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); showToast("Session search would open here"); }
   if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === "o") { event.preventDefault(); newSession(); }
 });

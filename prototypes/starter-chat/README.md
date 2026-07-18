@@ -2,7 +2,7 @@
 
 The selected direction for `docs: shape the starter chat experience`. This dependency-light, in-memory prototype pairs a label-free chat transcript with a T3-inspired Session sidebar beneath a full-width top bar: compact Search and New Session actions, filtering by Workspace, prominent cards for every active Session, quiet settled Sessions, and a dedicated Settings page. User messages align right in neutral bubbles. The Workspace plus button opens the operating-system folder picker directly.
 
-Workspace selection, Session creation and resuming, provider and model selection, thinking-level selection, message sending, expandable Tool observation, Run interruption, Settings navigation, and Runtime Reload are useful browser-only stubs.
+Workspace selection, Session creation and resuming, provider and model selection, thinking-level selection, message sending, expandable Tool observation, Run interruption, Settings navigation, and Runtime Reload are useful browser-only stubs. The collapsed sidebar retains labeled Search, Session, Workspace, Settings, and Reload controls, with flyouts for complete Workspace and Session navigation.
 
 ## Run
 
