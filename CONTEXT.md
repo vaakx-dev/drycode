@@ -52,8 +52,28 @@ The recommended extensions seeded by the installer to provide a basic chat exper
 _Avoid_: built-in features, default IDE
 
 **Workspace**:
-The local folder in which a Drycode Harness session operates.
+The local folder in which a Drycode Harness Session operates.
 _Avoid_: project
+
+**Session**:
+A durable, linear conversation bound to one Workspace. A Session has at most one active Run.
+_Avoid_: application session, branch tree
+
+**Run**:
+One agent execution started by Session input and completed by success, failure, or cancellation.
+_Avoid_: process, runtime generation
+
+**Tool**:
+A headless, model-callable operation contributed by a Drycode Extension.
+_Avoid_: command, UI action
+
+**Model Provider**:
+A Drycode Extension contribution that owns Model discovery, credential resolution, requests, and normalized response streaming.
+_Avoid_: built-in provider, Core model
+
+**Skill**:
+A named set of instructions and resources selected for a Session and incorporated through prompt assembly.
+_Avoid_: command, executable extension
 
 **Reload**:
 A complete restart of the extension and harness runtimes while the desktop application remains open.
