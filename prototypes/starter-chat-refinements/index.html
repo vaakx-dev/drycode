@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Drycode minimal navigation refinements</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="bar">
+    <div class="identity">
+      <i data-lucide="panels-top-left" aria-hidden="true"></i>
+      <div><strong>Drycode</strong><span>Navigation refinements</span></div>
+    </div>
+    <nav id="variants" aria-label="Prototype refinements"></nav>
+    <a id="open" class="open" target="_blank">
+      <i data-lucide="external-link" aria-hidden="true"></i>
+      <span>Open</span>
+    </a>
+  </header>
+  <main>
+    <iframe id="preview" title="Selected Drycode refinement"></iframe>
+  </main>
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

@@ -32,5 +32,5 @@ createServer((request, response) => {
   });
   stream.on("error", () => response.writeHead(404).end("Not found"));
 }).listen(4180, "127.0.0.1", () => {
-  console.log("Drycode starter chat gallery: http://127.0.0.1:4180/");
+  console.log("Drycode minimal refinements: http://127.0.0.1:4180/");
 });

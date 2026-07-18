@@ -1,0 +1,29 @@
+:root {
+  color-scheme: dark;
+  font-family: "Segoe UI Variable", "Segoe UI", sans-serif;
+  --background: #111318;
+  --surface: #1b1e24;
+  --line: #303640;
+  --text: #e6e9ef;
+  --muted: #929aa8;
+  --blue: #69a9ff;
+  --blue-soft: #172a42;
+}
+
+* { box-sizing: border-box; }
+html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: var(--background); color: var(--text); }
+body { display: grid; grid-template-rows: 48px 1fr; }
+.bar { min-width: 880px; display: flex; align-items: center; gap: 18px; border-bottom: 1px solid var(--line); background: #17191e; padding: 0 12px; }
+.identity { display: flex; align-items: center; gap: 9px; min-width: 185px; }
+.identity > svg { width: 18px; height: 18px; color: var(--blue); }
+.identity div { display: grid; line-height: 1.15; }
+.identity strong { font-size: 12px; }
+.identity span { color: var(--muted); font-size: 9px; }
+nav { min-width: 0; flex: 1; display: flex; justify-content: center; gap: 3px; }
+button, .open { height: 32px; display: inline-flex; align-items: center; gap: 7px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--muted); padding: 0 10px; font: 11px inherit; cursor: pointer; text-decoration: none; }
+button:hover, .open:hover { border-color: var(--line); background: var(--surface); color: var(--text); }
+button.active { border-color: #315986; background: var(--blue-soft); color: #c0dcff; }
+button svg, .open svg { width: 14px; height: 14px; }
+.open { margin-left: auto; }
+main, iframe { width: 100%; height: 100%; min-height: 0; }
+iframe { display: block; border: 0; background: var(--background); }
