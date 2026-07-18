@@ -105,7 +105,7 @@ kbd { margin-left: auto; border: 0; border-radius: 6px; background: #1d2024; pad
 .message.assistant { justify-content: flex-start; }
 .message.user { justify-content: flex-end; }
 .message p { max-width: 78%; margin: 0; color: #d9dce2; font-size: 13px; line-height: 1.6; }
-.message.user p { border: 1px solid var(--line); border-radius: 10px 10px 3px 10px; background: var(--surface-2); padding: 10px 13px; color: #e7e9ed; text-align: left; }
+.message.user p { border-radius: 10px 10px 3px 10px; background: var(--surface-2); padding: 10px 13px; color: #e7e9ed; text-align: left; }
 .inline-tools { max-width: 790px; margin: 4px auto 25px; padding: 0 23px; }
 .inline-tools .section-kicker { padding: 8px 0; border-top: 1px solid var(--line-soft); }
 .inline-tools .section-kicker span:first-child { display: inline-flex; align-items: center; gap: 7px; }
