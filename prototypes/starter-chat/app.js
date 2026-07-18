@@ -11,8 +11,12 @@ const state = {
   sidebarCollapsed: false,
   railMenu: null,
   page: "chat",
+  settingsSection: "general",
+  settingsProvider: null,
   composerMenu: null,
   providerView: "Anthropic",
+  providerConfig: { Anthropic: "Environment", OpenAI: "Windows Credential Manager", Google: null },
+  preferences: { enterToSend: true, expandTools: false },
   model: { provider: "Anthropic", name: "Claude Sonnet 4", ready: true },
   thinking: "High",
   activeSession: "contract",
@@ -83,6 +87,20 @@ const MODEL_PROVIDERS = [
   { name: "Google", icon: "https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@latest/icons/google.svg", models: ["Gemini 2.5 Pro", "Gemini 2.5 Flash"] },
 ];
 const THINKING_LEVELS = ["Off", "Low", "Medium", "High"];
+const INSTALLED_EXTENSIONS = [
+  { name: "Starter Shell", id: "vaakx.starter-shell", version: "0.6.2", role: "UI · Shell", icon: "panel-top" },
+  { name: "Starter Sessions", id: "vaakx.starter-sessions", version: "0.6.2", role: "UI · Harness", icon: "messages-square" },
+  { name: "Workspace Tools", id: "vaakx.workspace-tools", version: "0.4.1", role: "Harness", icon: "wrench" },
+  { name: "Anthropic Provider", id: "vaakx.anthropic", version: "0.3.0", role: "Harness", icon: "blocks" },
+  { name: "OpenAI Provider", id: "vaakx.openai", version: "0.3.0", role: "Harness", icon: "blocks" },
+  { name: "Google Provider", id: "vaakx.google", version: "0.2.4", role: "Harness", icon: "blocks" },
+];
+const SETTINGS_SECTIONS = [
+  ["general", "General", "settings-2"],
+  ["extensions", "Extensions", "blocks"],
+  ["providers", "Providers", "key-round"],
+  ["data", "Data", "database"],
+];
 
 const escapeHtml = (value) => String(value)
   .replaceAll("&", "&amp;")
@@ -110,7 +128,7 @@ function messageStream() {
 
 function toolCards() {
   if (!activeTools().length) return `<div class="no-activity">No Tool activity yet.</div>`;
-  return activeTools().map((tool) => `<details class="tool-card" ${tool.status === "running" ? "open" : ""}>
+  return activeTools().map((tool) => `<details class="tool-card" ${tool.status === "running" || state.preferences.expandTools ? "open" : ""}>
     <summary><span class="tool-mark ${tool.status}">${icon(tool.status === "running" ? "loader-circle" : "circle-check")}</span><b>${escapeHtml(tool.name)}</b><span class="tool-detail">${escapeHtml(tool.detail)}</span><span class="tool-status ${tool.status}">${tool.status === "running" ? "Running" : "Completed"}</span>${icon("chevron-down", "Toggle tool output")}</summary>
     <pre>${escapeHtml(tool.output)}</pre>
   </details>`).join("");
@@ -139,12 +157,41 @@ function composer() {
   </form>`;
 }
 
+function settingRow(iconName, title, detail, action = "") {
+  return `<article class="setting-row"><span class="setting-mark">${icon(iconName)}</span><span><b>${title}</b><small>${detail}</small></span>${action}</article>`;
+}
+
+function generalSettings() {
+  return `<section class="settings-group"><header><h2>Chat behavior</h2><p>Preferences owned by the Starter Shell.</p></header><div class="setting-list">
+    ${settingRow("corner-down-left", "Enter sends messages", "Use Shift Enter for a new line.", `<button class="setting-switch ${state.preferences.enterToSend ? "selected" : ""}" data-preference="enterToSend" aria-pressed="${state.preferences.enterToSend}" aria-label="Toggle Enter to send"><i></i></button>`)}
+    ${settingRow("wrench", "Expand Tool activity", "Open completed Tool results in the transcript.", `<button class="setting-switch ${state.preferences.expandTools ? "selected" : ""}" data-preference="expandTools" aria-pressed="${state.preferences.expandTools}" aria-label="Toggle expanded Tool activity"><i></i></button>`)}
+  </div></section><section class="settings-group"><header><h2>Runtime</h2><p>Changes to installed Extensions apply after Reload.</p></header><div class="setting-list">${settingRow("refresh-cw", "Runtime Generation", "Running · durable Sessions remain available after Reload.", `<button data-action="reload">Reload</button>`)}</div></section>`;
+}
+
+function extensionSettings() {
+  return `<section class="settings-group"><header class="settings-group-heading"><div><h2>Installed Extensions</h2><p>Drycode loads one complete Extension Graph from this folder.</p></div><button data-action="open-path" data-path="~/.drycode/extensions/">${icon("folder-open")}Open folder</button></header><div class="extension-settings-list">${INSTALLED_EXTENSIONS.map((extension) => `<article class="extension-setting-row"><span class="setting-mark">${icon(extension.icon)}</span><span><b>${escapeHtml(extension.name)}</b><small>${escapeHtml(extension.id)}</small></span><span class="extension-role">${escapeHtml(extension.role)}</span><time>v${escapeHtml(extension.version)}</time></article>`).join("")}</div><p class="settings-note">Installed Extensions are fully trusted. Adding or removing a package requires Reload and Drycode accepts or rejects the resulting graph as a whole.</p></section>`;
+}
+
+function providerSettings() {
+  return `<section class="settings-group"><header><h2>Model Providers</h2><p>Provider Extensions own credentials and model discovery. Select a model in the composer.</p></header><div class="provider-settings-list">${MODEL_PROVIDERS.map((provider) => {
+    const configured = Boolean(state.providerConfig[provider.name]);
+    return `<article class="provider-setting-row"><span class="provider-mark"><img src="${provider.icon}" alt=""></span><span><b>${escapeHtml(provider.name)}</b><small>${configured ? escapeHtml(state.providerConfig[provider.name]) : "No credential configured"}</small></span><strong class="${configured ? "" : "attention"}">${configured ? "Configured" : "Needs setup"}</strong><button data-settings-provider="${escapeHtml(provider.name)}">Configure</button></article>`;
+  }).join("")}</div></section>`;
+}
+
+function dataSettings() {
+  const paths = [
+    ["folder", "Drycode Home", "~/.drycode/"],
+    ["messages-square", "Sessions", "~/.drycode/sessions/"],
+    ["scroll-text", "Logs", "~/.drycode/logs/"],
+  ];
+  return `<section class="settings-group"><header><h2>Local Data</h2><p>Open Drycode-owned data on this computer.</p></header><div class="setting-list">${paths.map(([glyph, title, path]) => settingRow(glyph, title, path, `<button data-action="open-path" data-path="${path}">Open</button>`)).join("")}${settingRow("archive", "Extension cache", "~/.drycode/cache/ · disposable data", `<button data-action="clear-cache">Clear</button>`)}</div></section>`;
+}
+
 function settingsPage() {
-  return `<main class="settings-page">
-    <header class="settings-heading"><span class="eyebrow">Drycode</span><h1>Settings</h1><p>Manage the providers and runtime used by your Sessions.</p></header>
-    <section class="settings-section"><div><h2>Model providers</h2><p>Providers currently available to the model selector.</p></div><div class="settings-list">${MODEL_PROVIDERS.map((provider) => `<article class="settings-row"><span class="provider-mark"><img src="${provider.icon}" alt=""></span><span><b>${escapeHtml(provider.name)}</b><small>${provider.models.length} models available</small></span><strong>Active</strong></article>`).join("")}</div></section>
-    <section class="settings-section"><div><h2>Runtime</h2><p>Replace the current UI and Harness Runtime Generation.</p></div><div class="settings-list"><article class="settings-row"><span class="provider-mark">${icon("refresh-cw")}</span><span><b>Reload Drycode</b><small>Durable Sessions remain available</small></span><button data-action="reload">Reload</button></article></div></section>
-  </main>`;
+  const pages = { general: generalSettings, extensions: extensionSettings, providers: providerSettings, data: dataSettings };
+  const section = SETTINGS_SECTIONS.find(([id]) => id === state.settingsSection) || SETTINGS_SECTIONS[0];
+  return `<main class="settings-page"><header class="settings-heading"><span class="eyebrow">Settings</span><h1>${section[1]}</h1></header>${(pages[section[0]] || generalSettings)()}</main>`;
 }
 
 function featuredSessionCard(session) {
@@ -209,15 +256,33 @@ function navigationView() {
   </nav>`;
 }
 
+function settingsNavigation() {
+  return `<nav class="navigation-view settings-navigation ${state.sidebarCollapsed ? "collapsed" : ""}" aria-label="Settings navigation">
+    <header class="sidebar-brand"><span class="sidebar-logo" title="Drycode">${icon("panels-top-left")}</span><strong>Drycode</strong><span class="dev-badge">Dev</span></header>
+    <span class="settings-nav-label">Settings</span>
+    <div class="settings-nav">${SETTINGS_SECTIONS.map(([id, label, glyph]) => `<button class="${state.settingsSection === id ? "selected" : ""}" data-settings-section="${id}" aria-label="${label}" title="${label}" ${state.settingsSection === id ? "aria-current=\"page\"" : ""}>${icon(glyph)}<span>${label}</span></button>`).join("")}</div>
+    <footer class="settings-sidebar-footer"><button data-action="back-chat" aria-label="Back to chat" title="Back to chat">${icon("arrow-left")}<span>Back to chat</span></button><button class="sidebar-icon" data-action="reload" aria-label="Reload Runtime" title="Reload Runtime">${icon("refresh-cw")}</button></footer>
+  </nav>`;
+}
+
+function providerSettingsModal() {
+  const provider = MODEL_PROVIDERS.find((item) => item.name === state.settingsProvider) || MODEL_PROVIDERS[0];
+  const value = state.providerConfig[provider.name] || "";
+  return `<div class="modal-shade" data-dismiss="true"><section class="dialog" role="dialog" aria-modal="true" aria-labelledby="provider-settings-title"><div class="dialog-title"><span class="dialog-icon"><img src="${provider.icon}" alt=""></span><div><span class="eyebrow">Model Provider</span><h2 id="provider-settings-title">Configure ${escapeHtml(provider.name)}</h2></div></div><p>The ${escapeHtml(provider.name)} Extension owns credential resolution and model discovery.</p><label class="form-field">Credential reference<input id="provider-credential" value="${escapeHtml(value)}" placeholder="Environment or Windows Credential Manager"></label><div class="dialog-actions"><button class="plain-button" data-action="close-modal">Cancel</button><button data-action="save-provider">Save</button></div></section></div>`;
+}
+
 function modal() {
   if (!state.modal) return "";
+  if (state.modal === "provider") return providerSettingsModal();
   if (state.modal === "reload") return `<div class="modal-shade" data-dismiss="true"><section class="dialog" role="dialog" aria-modal="true" aria-labelledby="reload-title"><div class="dialog-title"><span class="dialog-icon amber">${icon("refresh-cw")}</span><div><span class="eyebrow">Runtime lifecycle</span><h2 id="reload-title">Reload the Runtime?</h2></div></div><p>Drycode will stop the complete UI and Harness Runtime Generation, then start a fresh generation. Durable Sessions remain available.</p><div class="reload-note">${icon("triangle-alert")}<span>Active work will be interrupted. Your Session record stays safe.</span></div><div class="dialog-actions"><button class="plain-button" data-action="close-modal">Cancel</button><button class="danger-button" data-action="confirm-reload">${icon("refresh-cw")}<span>Reload Drycode</span></button></div></section></div>`;
   return `<div class="modal-shade"><section class="dialog reload-progress" role="dialog" aria-modal="true"><span class="dialog-icon amber">${icon("refresh-cw")}</span><span class="eyebrow">Runtime lifecycle</span><h2>Reloading Runtime...</h2><p>Stopping the current generation and starting a fresh UI and Harness pair.</p><div class="progress-track"><i></i></div><small>Starting Runtime Generation 19</small></section></div>`;
 }
 
 function render() {
-  const content = state.page === "settings" ? settingsPage() : `<main class="chat-column">${messageStream()}${composer()}</main>`;
-  document.querySelector("#app").innerHTML = `<div class="app-frame">${topbar()}<div class="nav-layout ${state.sidebarCollapsed ? "sidebar-collapsed" : ""}">${navigationView()}${content}</div></div>${modal()}${state.toast ? `<div class="toast" role="status">${icon("info")}<span>${escapeHtml(state.toast)}</span></div>` : ""}`;
+  const inSettings = state.page === "settings";
+  const content = inSettings ? settingsPage() : `<main class="chat-column">${messageStream()}${composer()}</main>`;
+  const navigation = inSettings ? settingsNavigation() : navigationView();
+  document.querySelector("#app").innerHTML = `<div class="app-frame">${topbar()}<div class="nav-layout ${state.sidebarCollapsed ? "sidebar-collapsed" : ""}">${navigation}${content}</div></div>${modal()}${state.toast ? `<div class="toast" role="status">${icon("info")}<span>${escapeHtml(state.toast)}</span></div>` : ""}`;
   if (window.lucide) window.lucide.createIcons();
   bind();
 }
@@ -366,12 +431,27 @@ function bind() {
     const action = element.dataset.action;
     if (action === "send") event.preventDefault();
     if (action === "reload") { state.modal = action; state.railMenu = null; }
-    if (action === "close-modal") state.modal = null;
+    if (action === "close-modal") { state.modal = null; state.settingsProvider = null; }
     if (action === "settings") {
       state.page = "settings";
+      state.settingsSection = "general";
       state.composerMenu = null;
       state.railMenu = null;
       return render();
+    }
+    if (action === "back-chat") {
+      state.page = "chat";
+      state.modal = null;
+      return render();
+    }
+    if (action === "open-path") return showToast(`Opening ${element.dataset.path}`);
+    if (action === "clear-cache") return showToast("Extension cache cleared");
+    if (action === "save-provider") {
+      const value = document.querySelector("#provider-credential")?.value.trim();
+      state.providerConfig[state.settingsProvider] = value || null;
+      state.modal = null;
+      state.settingsProvider = null;
+      return showToast("Provider configuration saved");
     }
     if (action === "rail-workspaces") {
       state.railMenu = state.railMenu === "workspaces" ? null : "workspaces";
@@ -404,6 +484,20 @@ function bind() {
     render();
   }));
   document.querySelectorAll("[data-session]").forEach((element) => element.addEventListener("click", () => selectSession(element.dataset.session)));
+  document.querySelectorAll("[data-settings-section]").forEach((element) => element.addEventListener("click", () => {
+    state.settingsSection = element.dataset.settingsSection;
+    render();
+  }));
+  document.querySelectorAll("[data-settings-provider]").forEach((element) => element.addEventListener("click", () => {
+    state.settingsProvider = element.dataset.settingsProvider;
+    state.modal = "provider";
+    render();
+  }));
+  document.querySelectorAll("[data-preference]").forEach((element) => element.addEventListener("click", () => {
+    const preference = element.dataset.preference;
+    state.preferences[preference] = !state.preferences[preference];
+    render();
+  }));
   document.querySelectorAll("[data-workspace-filter]").forEach((element) => element.addEventListener("click", () => filterWorkspace(element.dataset.workspaceFilter)));
   document.querySelectorAll("[data-provider-option]").forEach((element) => element.addEventListener("click", () => {
     state.providerView = element.dataset.providerOption;
@@ -432,7 +526,7 @@ function bind() {
   document.querySelectorAll("textarea").forEach((textarea) => {
     textarea.addEventListener("input", () => { state.draft = textarea.value; });
     textarea.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); state.draft = textarea.value; send(); }
+      if (event.key === "Enter" && !event.shiftKey && state.preferences.enterToSend) { event.preventDefault(); state.draft = textarea.value; send(); }
     });
   });
   document.querySelectorAll("[data-composer]").forEach((form) => form.addEventListener("submit", (event) => { event.preventDefault(); send(); }));
@@ -448,11 +542,11 @@ function bind() {
       render();
     }
   });
-  document.querySelectorAll(".modal-shade[data-dismiss]").forEach((shade) => shade.addEventListener("click", (event) => { if (event.target === shade) { state.modal = null; render(); } }));
+  document.querySelectorAll(".modal-shade[data-dismiss]").forEach((shade) => shade.addEventListener("click", (event) => { if (event.target === shade) { state.modal = null; state.settingsProvider = null; render(); } }));
 }
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && (state.modal || state.composerMenu || state.railMenu)) { state.modal = null; state.composerMenu = null; state.railMenu = null; render(); }
+  if (event.key === "Escape" && (state.modal || state.composerMenu || state.railMenu)) { state.modal = null; state.settingsProvider = null; state.composerMenu = null; state.railMenu = null; render(); }
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); showToast("Session search would open here"); }
   if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === "o") { event.preventDefault(); newSession(); }
 });
