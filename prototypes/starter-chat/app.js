@@ -3,8 +3,11 @@ const state = {
   workspaces: [
     { name: "drycode", path: "D:\\work\\drycode" },
     { name: "agent-lab", path: "D:\\work\\agent-lab" },
+    { name: "docs", path: "D:\\work\\docs" },
+    { name: "sandbox", path: "D:\\work\\sandbox" },
   ],
   workspaceFilter: "all",
+  workspaceScroll: 0,
   sidebarCollapsed: false,
   model: { provider: "Anthropic", name: "Claude Sonnet 4", ready: true },
   activeSession: "contract",
@@ -311,6 +314,16 @@ function bind() {
   }));
   document.querySelectorAll("[data-session]").forEach((element) => element.addEventListener("click", () => selectSession(element.dataset.session)));
   document.querySelectorAll("[data-workspace-filter]").forEach((element) => element.addEventListener("click", () => filterWorkspace(element.dataset.workspaceFilter)));
+  const workspaceTabs = document.querySelector(".workspace-tabs");
+  if (workspaceTabs) {
+    workspaceTabs.scrollLeft = state.workspaceScroll;
+    workspaceTabs.addEventListener("scroll", () => { state.workspaceScroll = workspaceTabs.scrollLeft; });
+    workspaceTabs.addEventListener("wheel", (event) => {
+      if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+      event.preventDefault();
+      workspaceTabs.scrollLeft += event.deltaY;
+    }, { passive: false });
+  }
   document.querySelectorAll("textarea").forEach((textarea) => {
     textarea.addEventListener("input", () => { state.draft = textarea.value; });
     textarea.addEventListener("keydown", (event) => {

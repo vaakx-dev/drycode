@@ -75,8 +75,9 @@ svg { width: 15px; height: 15px; stroke-width: 1.8; }
 .sidebar-actions svg { width: 17px; height: 17px; }
 .sidebar-actions span { font-size: 12px; font-weight: 600; }
 kbd { margin-left: auto; border: 0; border-radius: 6px; background: #1d2024; padding: 5px 7px; color: #777f89; font: 600 9px var(--mono); }
-.workspace-tabs { display: flex; align-items: stretch; gap: 6px; padding: 0 17px 11px; }
-.workspace-tabs button { min-width: 0; height: 35px; display: inline-flex; align-items: center; gap: 7px; border: 1px solid #343941; border-radius: 0; background: #17191c; padding: 0 11px; color: #9299a3; font-size: 11px; font-weight: 650; }
+.workspace-tabs { width: calc(100% - 20px); min-width: 0; display: flex; align-items: stretch; gap: 6px; overflow-x: auto; margin: 0 10px; padding: 0 0 11px; scrollbar-width: none; }
+.workspace-tabs::-webkit-scrollbar { display: none; }
+.workspace-tabs button { min-width: 0; height: 35px; display: inline-flex; align-items: center; gap: 7px; flex: none; border: 1px solid #343941; border-radius: 0; background: #17191c; padding: 0 11px; color: #9299a3; font-size: 11px; font-weight: 650; }
 .workspace-tabs .all-workspaces { text-transform: uppercase; }
 .workspace-tabs button:not(.all-workspaces, .add-workspace) { max-width: 132px; }
 .workspace-tabs button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
