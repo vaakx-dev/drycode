@@ -91,13 +91,13 @@ function composer() {
   </form>`;
 }
 
-function featuredSessionCard(session, index) {
+function featuredSessionCard(session) {
   const selected = session.id === state.activeSession;
   const running = selected && state.running;
   return `<button class="featured-session ${selected ? "selected" : ""}" data-session="${session.id}">
     <span class="featured-meta"><span class="session-source">${icon("message-square-code")}<b>${escapeHtml(session.workspace)}</b></span><time>${session.time}</time></span>
     <strong>${escapeHtml(session.title)}</strong>
-    <span class="featured-status"><b class="${running ? "running" : ""}">${running ? "Running" : index === 0 ? "Active" : "Paused"}</b><span>${escapeHtml(running ? state.stage : session.summary)}</span>${icon(running ? "square" : "loader-circle")}</span>
+    <span class="featured-status"><b class="${running ? "running" : ""}">${running ? "Running" : "Active"}</b><span>${escapeHtml(running ? state.stage : session.summary)}</span>${icon(running ? "square" : "circle")}</span>
   </button>`;
 }
 
@@ -109,8 +109,8 @@ function settledSessionRow(session) {
 
 function navigationView() {
   const sessions = visibleSessions();
-  const featured = sessions.slice(0, 2);
-  const settled = sessions.slice(2);
+  const featured = sessions.filter((session) => session.id === state.activeSession);
+  const settled = sessions.filter((session) => session.id !== state.activeSession);
   return `<nav class="navigation-view" aria-label="Drycode navigation">
     <header class="sidebar-brand"><button class="sidebar-icon" data-action="collapse-sidebar" aria-label="Collapse sidebar">${icon("panel-left-close")}</button><span class="sidebar-logo">${icon("panels-top-left")}</span><strong>Drycode</strong><span class="dev-badge">Dev</span></header>
     <div class="sidebar-actions">

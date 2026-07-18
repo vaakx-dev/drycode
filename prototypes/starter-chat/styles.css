@@ -98,7 +98,7 @@ kbd { margin-left: auto; border: 0; border-radius: 6px; background: #1d2024; pad
 .sidebar-footer span { font-size: 11px; font-weight: 600; }
 .section-kicker { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 
-.chat-column { min-width: 0; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; background: var(--canvas); }
+.chat-column { min-width: 0; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; background: #000; }
 
 .message-stream { min-height: 0; overflow: auto; scrollbar-color: #4b5361 transparent; }
 .message { max-width: 790px; display: flex; margin: 0 auto; padding: 14px 23px; }
