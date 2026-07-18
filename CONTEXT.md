@@ -16,6 +16,13 @@ _Avoid_: Pi runtime, Pi wrapper
 A local, fully trusted package that contributes UI behavior, harness behavior, or both.
 _Avoid_: plug-in, Pi extension
 
+**Extension Manifest**:
+A Drycode Extension's declaration of its identity, version, Drycode compatibility, entry points, and required dependencies.
+
+**Extension Graph**:
+The complete, deterministic dependency graph of discovered Drycode Extensions. Drycode accepts or rejects the graph as a whole.
+_Avoid_: partial extension set, best-effort loading
+
 **Shell Extension**:
 The one active Drycode Extension that owns the application's root user interface and defines how other UI contributions compose.
 _Avoid_: core shell, built-in shell
