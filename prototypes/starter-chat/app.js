@@ -71,12 +71,6 @@ function titlebar() {
   </header>`;
 }
 
-function workspaceButton(extraClass = "") {
-  return `<button class="workspace-button ${extraClass}" data-action="workspace" title="Select Workspace">
-    <span class="context-icon workspace-icon">${icon("folder-open")}</span><span class="button-copy"><b>${escapeHtml(state.workspace.name)}</b><small>${escapeHtml(state.workspace.path)}</small></span><span class="chevron">${icon("chevron-down")}</span>
-  </button>`;
-}
-
 function sessionRows() {
   return state.sessions.map((session) => `<button class="session-row ${session.id === state.activeSession ? "selected" : ""}" data-session="${session.id}">
     <span class="session-icon">${icon(session.id === state.activeSession ? "circle-dot" : "circle")}</span><span class="session-row-copy"><b>${escapeHtml(session.title)}</b><small>${escapeHtml(session.summary)}</small></span><time>${session.time}</time>
@@ -106,13 +100,42 @@ function composer() {
   </form>`;
 }
 
+function featuredSessionCard(session, index) {
+  const selected = session.id === state.activeSession;
+  const running = selected && state.running;
+  return `<button class="featured-session ${selected ? "selected" : ""}" data-session="${session.id}">
+    <span class="featured-meta"><span class="session-source">${icon("message-square-code")}<b>${escapeHtml(state.workspace.name)}</b></span><time>${session.time}</time></span>
+    <strong>${escapeHtml(session.title)}</strong>
+    <span class="featured-status"><b class="${running ? "running" : ""}">${running ? "Running" : index === 0 ? "Active" : "Paused"}</b><span>${escapeHtml(running ? state.stage : session.summary)}</span>${icon(running ? "square" : "loader-circle")}</span>
+  </button>`;
+}
+
+function settledSessionRow(session) {
+  return `<button class="settled-session ${session.id === state.activeSession ? "selected" : ""}" data-session="${session.id}">
+    ${icon("message-square")}<span>${escapeHtml(session.title)}</span><time>${session.time}</time>
+  </button>`;
+}
+
 function navigationView() {
+  const featured = state.sessions.slice(0, 2);
+  const settled = state.sessions.slice(2);
   return `<nav class="navigation-view" aria-label="Drycode navigation">
-    <div class="nav-workspace"><span class="eyebrow">Workspace</span>${workspaceButton()}</div>
-    <button class="new-session primary-button" data-action="new-session">${icon("plus")}<span>New Session</span></button>
-    <div class="nav-section"><span class="eyebrow">Workspace</span><button class="nav-link active">${icon("messages-square")}<span>Sessions</span><em>${state.sessions.length}</em></button></div>
-    <div class="session-nav"><div class="section-kicker"><span>Recent Sessions</span><span class="grow"></span><button class="mini-button" data-action="new-session" aria-label="New Session">${icon("plus")}</button></div>${sessionRows()}</div>
-    <div class="nav-footer"><div class="runtime-summary"><span class="status-icon ${state.running ? "busy" : "ready"}">${icon(state.running ? "loader-circle" : "circle-check")}</span><span><b>${state.running ? "Run active" : "Runtime ready"}</b><small>${state.running ? "Harness is observing" : "Ready for input"}</small></span></div><button class="footer-link" data-action="reload">${icon("refresh-cw")}<span>Reload Runtime</span></button></div>
+    <header class="sidebar-brand"><button class="sidebar-icon" data-action="collapse-sidebar" aria-label="Collapse sidebar">${icon("panel-left-close")}</button><span class="sidebar-logo">${icon("panels-top-left")}</span><strong>Drycode</strong><span class="dev-badge">Dev</span></header>
+    <div class="sidebar-actions">
+      <button data-action="search">${icon("search")}<span>Search</span><kbd>Ctrl K</kbd></button>
+      <button data-action="new-session">${icon("plus")}<span>New Session</span><kbd>Ctrl Shift O</kbd></button>
+    </div>
+    <div class="workspace-tabs">
+      <button class="all-workspaces">All</button>
+      <button data-action="workspace">${icon("folder")}<span>${escapeHtml(state.workspace.name)}</span></button>
+      <button class="add-workspace" data-action="workspace" aria-label="Add Workspace">${icon("plus")}</button>
+    </div>
+    <div class="sidebar-sessions">
+      <div class="featured-sessions">${featured.map(featuredSessionCard).join("")}</div>
+      <div class="settled-heading"><span>Settled</span><i></i></div>
+      <div class="settled-sessions">${settled.map(settledSessionRow).join("")}</div>
+    </div>
+    <footer class="sidebar-footer"><button data-action="model">${icon("settings")}<span>Settings</span></button><button class="sidebar-icon" data-action="reload" aria-label="Reload Runtime" title="Reload Runtime">${icon("refresh-cw")}</button></footer>
   </nav>`;
 }
 
@@ -215,6 +238,8 @@ function bind() {
     if (action === "interrupt") return interrupt();
     if (action === "send") return send();
     if (action === "choose-folder") return showToast("Native folder picker would open here");
+    if (action === "search") return showToast("Session search would open here");
+    if (action === "collapse-sidebar") return showToast("Sidebar collapse would keep an icon rail");
     if (action === "save-model") {
       state.model.provider = document.querySelector("#provider").value;
       state.model.name = document.querySelector("#model").value;
@@ -244,6 +269,8 @@ function bind() {
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && state.modal) { state.modal = null; render(); }
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); showToast("Session search would open here"); }
+  if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === "o") { event.preventDefault(); newSession(); }
 });
 
 render();

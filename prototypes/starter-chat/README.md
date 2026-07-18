@@ -1,6 +1,6 @@
 # Starter chat prototype
 
-The selected Inline context direction for `docs: shape the starter chat experience`. This dependency-light, in-memory prototype keeps the Windows NavigationView and chat transcript while placing Workspace, Session, and Model context in one compact header and a matching composer context line. Model configuration does not occupy a separate navigation footer surface; Reload remains in the NavigationView footer.
+The selected direction for `docs: shape the starter chat experience`. This dependency-light, in-memory prototype pairs the chat transcript with a T3-inspired Session sidebar: compact Search and New Session actions, Workspace filters, prominent active Session cards, quiet settled Sessions, and footer settings. Workspace, Session, and Model context remains available from the sidebar and composer without a separate context header.
 
 Workspace selection, Session creation/resuming, Model configuration, message sending, expandable Tool observation, Run interruption, and Runtime Reload are useful browser-only stubs.
 
